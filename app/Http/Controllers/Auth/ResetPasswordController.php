@@ -29,7 +29,7 @@ class ResetPasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->max(20)->mixedCase()->numbers()],
         ]);
 
         // PasswordBroker::reset kiểm tra token có đúng/còn hạn không (mặc định 60 phút),

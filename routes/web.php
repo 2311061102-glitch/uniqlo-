@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
@@ -35,6 +37,8 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/dang-nhap', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/dang-nhap', [AuthController::class, 'login'])->name('login.store');
+    Route::get('/dang-nhap/google', [GoogleController::class, 'redirect'])->name('login.google');
+    Route::get('/dang-nhap/google/callback', [GoogleController::class, 'callback'])->name('login.google.callback');
 
     Route::get('/quen-mat-khau', [ForgotPasswordController::class, 'show'])->name('password.request');
     Route::post('/quen-mat-khau', [ForgotPasswordController::class, 'send'])
@@ -73,13 +77,22 @@ Route::middleware('auth')->group(function () {
     Route::put('/gio-hang/{cartItem}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/gio-hang/{cartItem}', [CartController::class, 'destroy'])->name('cart.destroy');
 
-    // --- Mới thêm ở Giai đoạn 3 (Thanh toán): Checkout + Đơn hàng ---
     Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/thanh-toan', [CheckoutController::class, 'store'])->name('checkout.store');
 
     Route::get('/don-hang', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/don-hang/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/don-hang/{order}/theo-doi', [OrderController::class, 'tracking'])->name('orders.tracking');
     Route::post('/don-hang/{order}/huy', [OrderController::class, 'cancel'])->name('orders.cancel');
+
+    // --- Mới thêm ở Giai đoạn 4 (Thanh toán): VietQR ---
+    Route::get('/don-hang/{order}/thanh-toan-vietqr', [PaymentController::class, 'vietqr'])->name('payments.vietqr');
+
+    // "role:admin": lớp phòng thủ THỨ 2 ở tầng route, cộng thêm với kiểm tra
+    // isAdmin() ngay trong Controller — dù thiếu 1 trong 2 lớp, lớp còn lại vẫn chặn được.
+    Route::post('/don-hang/{order}/xac-nhan-thanh-toan', [OrderController::class, 'confirmPayment'])
+        ->middleware('role:admin')
+        ->name('orders.confirmPayment');
 
     Route::get('/xac-thuc-email', function () {
         return view('auth.verify-email');
@@ -97,10 +110,3 @@ Route::middleware('auth')->group(function () {
         return back()->with('success', 'Đã gửi lại email xác thực, vui lòng kiểm tra hộp thư.');
     })->middleware('throttle:6,1')->name('verification.send');
 });
-
-/*
-| VÍ DỤ middleware phân quyền role (tham khảo cho trang admin sau này):
-| Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-|     Route::get('/dashboard', fn () => 'Trang quản trị - chỉ admin vào được');
-| });
-*/

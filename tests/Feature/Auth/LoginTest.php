@@ -36,6 +36,22 @@ class LoginTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_dang_nhap_duoc_bang_so_dien_thoai(): void
+    {
+        $user = User::factory()->create([
+            'phone' => '0912345678',
+            'password' => 'Password123',
+        ]);
+
+        $response = $this->post(route('login.store'), [
+            'email' => '0912345678',
+            'password' => 'Password123',
+        ]);
+
+        $response->assertRedirect(route('home'));
+        $this->assertAuthenticatedAs($user);
+    }
+
     public function test_bi_khoa_tam_thoi_sau_5_lan_dang_nhap_sai(): void
     {
         $user = User::factory()->create(['password' => 'Password123']);

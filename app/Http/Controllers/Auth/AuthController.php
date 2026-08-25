@@ -51,9 +51,18 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string'],
             'password' => ['required'],
         ]);
+
+        $user = User::where('email', $credentials['email'])
+            ->orWhere('phone', $credentials['email'])
+            ->first();
+
+        $loginCredentials = [
+            'email' => $user?->email ?? $credentials['email'],
+            'password' => $credentials['password'],
+        ];
 
         $throttleKey = Str::lower($credentials['email']).'|'.$request->ip();
 
@@ -65,11 +74,11 @@ class AuthController extends Controller
             ]);
         }
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt($loginCredentials, $request->boolean('remember'))) {
             RateLimiter::hit($throttleKey, decaySeconds: 60);
 
             throw ValidationException::withMessages([
-                'email' => 'Email hoặc mật khẩu không đúng.',
+                'email' => 'Email/số điện thoại hoặc mật khẩu không đúng.',
             ]);
         }
 

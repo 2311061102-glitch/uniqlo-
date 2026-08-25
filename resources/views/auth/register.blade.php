@@ -40,9 +40,12 @@
 
             <div class="form-group">
                 <label for="password">Mật khẩu</label>
-                <input type="password" id="password" name="password"
-                       class="form-input @error('password') form-input--error @enderror" required>
-                <p class="form-hint">Ít nhất 8 ký tự, có chữ hoa, chữ thường và số.</p>
+                  <div class="password-field">
+                      <input type="password" id="password" name="password"
+                          class="form-input @error('password') form-input--error @enderror" required>
+                      <button type="button" class="password-toggle" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">&#128065;</button>
+                  </div>
+                  @include('auth._password-rules')
                 @error('password')
                     <p class="form-error">{{ $message }}</p>
                 @enderror
@@ -50,8 +53,11 @@
 
             <div class="form-group">
                 <label for="password_confirmation">Nhập lại mật khẩu</label>
-                <input type="password" id="password_confirmation" name="password_confirmation"
-                       class="form-input" required>
+                  <div class="password-field">
+                      <input type="password" id="password_confirmation" name="password_confirmation"
+                          class="form-input" required>
+                      <button type="button" class="password-toggle" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">&#128065;</button>
+                  </div>
             </div>
 
             <button type="submit" class="btn-primary">Đăng ký</button>

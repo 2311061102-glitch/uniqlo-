@@ -61,6 +61,12 @@
             </span>
         </p>
 
+        @if ($order->payment_method === 'vietqr' && $order->payment_status !== 'paid')
+            <a href="{{ route('payments.vietqr', $order) }}" class="btn-primary btn-primary--inline" style="margin-top: 16px; display: block; text-align: center;">
+                Xem lại mã QR chuyển khoản
+            </a>
+        @endif
+
         @if ($order->order_status === 'pending')
             <form method="POST" action="{{ route('orders.cancel', $order) }}" style="margin-top: 16px;"
                   onsubmit="return confirm('Hủy đơn hàng này?');">
@@ -68,6 +74,19 @@
                 <button type="submit" class="btn-danger">Hủy đơn hàng</button>
             </form>
         @endif
+
+        @if ($order->order_status !== 'cancelled')
+            <a href="{{ route('orders.tracking', $order) }}" class="btn-secondary order-track-link">Theo dõi tiến độ giao hàng</a>
+        @endif
+
+        @auth
+            @if (auth()->user()->isAdmin() && $order->payment_status !== 'paid' && $order->payment_method !== 'cod')
+                <form method="POST" action="{{ route('orders.confirmPayment', $order) }}" style="margin-top: 16px;">
+                    @csrf
+                    <button type="submit" class="btn-primary">[Demo Admin] Xác nhận đã thanh toán</button>
+                </form>
+            @endif
+        @endauth
     </div>
 </div>
 

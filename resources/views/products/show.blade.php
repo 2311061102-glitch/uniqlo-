@@ -12,13 +12,13 @@
 <div class="product-detail">
     <div class="product-gallery">
         <img id="main-image"
-             src="{{ $product->primary_image ? asset('storage/'.$product->primary_image->image_path) : '' }}"
+             src="{{ $product->primary_image?->url ?? '' }}"
              alt="{{ $product->name }}" class="product-gallery__main">
 
         @if ($product->images->count() > 1)
             <div class="product-gallery__thumbs">
                 @foreach ($product->images as $image)
-                    <img src="{{ asset('storage/'.$image->image_path) }}" alt="{{ $product->name }}"
+                    <img src="{{ $image->url }}" alt="{{ $product->name }}"
                          class="product-gallery__thumb"
                          onclick="document.getElementById('main-image').src = this.src">
                 @endforeach

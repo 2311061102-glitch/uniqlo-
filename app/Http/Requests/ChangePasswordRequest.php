@@ -18,7 +18,7 @@ class ChangePasswordRequest extends FormRequest
             // rule 'current_password' có sẵn của Laravel: tự động so sánh với
             // mật khẩu (đã hash) của user đang đăng nhập, không cần tự viết Hash::check()
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->max(20)->mixedCase()->numbers()],
         ];
     }
 

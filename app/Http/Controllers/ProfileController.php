@@ -14,6 +14,11 @@ class ProfileController extends Controller
     {
         return view('profile.edit', [
             'user' => $request->user(),
+            'addresses' => $request->user()->addresses()
+                ->orderByDesc('is_default')
+                ->orderByDesc('id')
+                ->get(),
+            'orders' => $request->user()->orders()->latest()->limit(5)->get(),
         ]);
     }
 

@@ -15,7 +15,7 @@
             @foreach ($cartItems as $item)
                 <div class="cart-item">
                     @if ($item->variant->product->primary_image)
-                        <img src="{{ asset('storage/'.$item->variant->product->primary_image->image_path) }}"
+                        <img src="{{ $item->variant->product->primary_image->url }}"
                              alt="{{ $item->variant->product->name }}" class="cart-item__image">
                     @else
                         <div class="cart-item__image"></div>
