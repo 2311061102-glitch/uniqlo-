@@ -8,55 +8,46 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /**
-     * Hiện form đăng ký.
-     */
     public function showRegisterForm()
     {
         return view('auth.register');
     }
 
-    /**
-     * Xử lý dữ liệu đăng ký được gửi lên.
-     * RegisterRequest $request: Laravel tự validate trước khi vào hàm này,
-     * nên trong này không cần viết lại if/else kiểm tra dữ liệu nữa.
-     */
     public function register(RegisterRequest $request)
     {
         $validated = $request->validated();
 
-        // Mọi tài khoản tự đăng ký đều mặc định là "customer" (khách hàng)
         $customerRole = Role::where('name', 'customer')->first();
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
-            'password' => $validated['password'], // Model User đã cast 'hashed' -> tự động bcrypt, không cần Hash::make() thủ công
+            'password' => $validated['password'],
             'role_id' => $customerRole?->id,
         ]);
 
-        // Đăng ký xong thì đăng nhập luôn cho tiện, không bắt user đăng nhập lại
         Auth::login($user);
 
-        return redirect()->route('home')->with('success', 'Đăng ký tài khoản thành công!');
+        // Gửi email xác thực ngay sau khi tạo tài khoản. Đây là hàm có sẵn của Laravel
+        // (đến từ trait MustVerifyEmail gắn ở Model User) — tự soạn email, tự sinh link
+        // xác thực có chữ ký bảo mật (signed URL), không cần tự viết logic gửi mail.
+        $user->sendEmailVerificationNotification();
+
+        return redirect()->route('home')->with('success', 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.');
     }
 
-    /**
-     * Hiện form đăng nhập.
-     */
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    /**
-     * Xử lý đăng nhập.
-     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -64,22 +55,31 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        // Auth::attempt tự động so sánh password đã hash trong DB, trả về true/false
+        $throttleKey = Str::lower($credentials['email']).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, maxAttempts: 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            throw ValidationException::withMessages([
+                'email' => "Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau {$seconds} giây.",
+            ]);
+        }
+
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            RateLimiter::hit($throttleKey, decaySeconds: 60);
+
             throw ValidationException::withMessages([
                 'email' => 'Email hoặc mật khẩu không đúng.',
             ]);
         }
 
-        // Chống session fixation attack: tạo session mới sau khi đăng nhập thành công
+        RateLimiter::clear($throttleKey);
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('home'));
     }
 
-    /**
-     * Xử lý đăng xuất.
-     */
     public function logout(Request $request)
     {
         Auth::logout();

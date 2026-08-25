@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="auth-page">
+    <div class="profile-stack">
     <div class="auth-card">
         <h1 class="auth-card__title">Thông tin cá nhân</h1>
 
@@ -57,6 +58,32 @@
         <p class="auth-card__footer">
             <a href="{{ route('password.edit') }}">Đổi mật khẩu</a>
         </p>
+    </div>
+
+    {{-- ===== Vùng nguy hiểm: xóa tài khoản ===== --}}
+    <div class="auth-card danger-zone">
+        <h2 class="danger-zone__title">Xóa tài khoản</h2>
+        <p class="form-hint" style="margin-bottom: 16px;">
+            Hành động này không thể hoàn tác. Bạn sẽ không thể đăng nhập lại bằng tài khoản này.
+        </p>
+
+        <form method="POST" action="{{ route('profile.destroy') }}" class="auth-form"
+              onsubmit="return confirm('Bạn chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.');">
+            @csrf
+            @method('DELETE')
+
+            <div class="form-group">
+                <label for="current_password_delete">Nhập mật khẩu để xác nhận</label>
+                <input type="password" id="current_password_delete" name="current_password"
+                       class="form-input @error('current_password') form-input--error @enderror" required>
+                @error('current_password')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <button type="submit" class="btn-danger">Xóa tài khoản vĩnh viễn</button>
+        </form>
+    </div>
     </div>
 </div>
 @endsection
