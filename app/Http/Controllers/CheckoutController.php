@@ -38,12 +38,11 @@ class CheckoutController extends Controller
 
         $validated = $request->validate([
             'address_id' => ['required', 'exists:addresses,id'],
-            'payment_method' => ['required', 'in:cod,vietqr,momo,vnpay'],
+            'payment_method' => ['required', 'in:cod,vietqr,vnpay'],
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        // Giai đoạn này: COD và VietQR đã hoạt động thật. MoMo/VNPay còn chờ giai đoạn sau.
-        if (! in_array($validated['payment_method'], ['cod', 'vietqr'])) {
+        if (! in_array($validated['payment_method'], ['cod', 'vietqr', 'vnpay'])) {
             return back()->with('error', 'Phương thức thanh toán này chưa khả dụng.');
         }
 
@@ -112,9 +111,12 @@ class CheckoutController extends Controller
             return $order;
         });
 
-        // VietQR: đưa khách sang trang hiện mã QR để chuyển khoản, thay vì thẳng tới trang chi tiết đơn
         if ($order->payment_method === 'vietqr') {
             return redirect()->route('payments.vietqr', $order);
+        }
+
+        if ($order->payment_method === 'vnpay') {
+            return redirect()->route('payments.vnpay.pay', $order);
         }
 
         return redirect()->route('orders.show', $order)->with('success', 'Đặt hàng thành công!');

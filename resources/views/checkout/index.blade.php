@@ -41,16 +41,11 @@
                 <span><strong>Chuyển khoản ngân hàng (VietQR)</strong><br>Quét mã QR, chuyển khoản trực tiếp từ app ngân hàng bất kỳ.</span>
             </label>
 
-            {{-- 2 phương thức dưới đây sẽ mở ở các giai đoạn sau --}}
-            <label class="checkout-option checkout-option--disabled">
-                <input type="radio" name="payment_method" value="momo" disabled>
-                <span><strong>Ví MoMo</strong><br>Sắp ra mắt.</span>
+            <label class="checkout-option">
+                <input type="radio" name="payment_method" value="vnpay">
+                <span><strong>VNPay Sandbox</strong><br>Thanh toán qua VNPay QR hoặc thẻ trong môi trường thử nghiệm.</span>
             </label>
 
-            <label class="checkout-option checkout-option--disabled">
-                <input type="radio" name="payment_method" value="vnpay" disabled>
-                <span><strong>VNPay (thẻ nội địa + thẻ quốc tế)</strong><br>Sắp ra mắt.</span>
-            </label>
         </div>
 
         <div class="checkout-section">

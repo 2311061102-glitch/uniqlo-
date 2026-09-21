@@ -71,7 +71,9 @@
                     <button type="submit" class="link-button">Đăng xuất</button>
                 </form>
             @else
-                <a href="{{ route('login.google') }}" class="site-header__icon" aria-label="Đăng nhập Google">G</a>
+                @if (Route::has('login.google'))
+                    <a href="{{ route('login.google') }}" class="site-header__icon" aria-label="Đăng nhập Google">G</a>
+                @endif
                 <a href="{{ route('login') }}" class="site-header__action" aria-label="Đăng nhập" title="Đăng nhập">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
                 </a>

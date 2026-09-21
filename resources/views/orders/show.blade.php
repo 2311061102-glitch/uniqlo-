@@ -67,6 +67,12 @@
             </a>
         @endif
 
+        @if ($order->payment_method === 'momo' && $order->payment_status !== 'paid')
+            <a href="{{ route('payments.momo.pay', $order) }}" class="btn-primary btn-primary--inline" style="margin-top: 16px; display: block; text-align: center;">
+                Thanh toán lại qua MoMo
+            </a>
+        @endif
+
         @if ($order->order_status === 'pending')
             <form method="POST" action="{{ route('orders.cancel', $order) }}" style="margin-top: 16px;"
                   onsubmit="return confirm('Hủy đơn hàng này?');">
@@ -75,12 +81,8 @@
             </form>
         @endif
 
-        @if ($order->order_status !== 'cancelled')
-            <a href="{{ route('orders.tracking', $order) }}" class="btn-secondary order-track-link">Theo dõi tiến độ giao hàng</a>
-        @endif
-
         @auth
-            @if (auth()->user()->isAdmin() && $order->payment_status !== 'paid' && $order->payment_method !== 'cod')
+            @if (auth()->user()->isAdmin() && $order->payment_status !== 'paid' && $order->payment_method === 'vietqr')
                 <form method="POST" action="{{ route('orders.confirmPayment', $order) }}" style="margin-top: 16px;">
                     @csrf
                     <button type="submit" class="btn-primary">[Demo Admin] Xác nhận đã thanh toán</button>

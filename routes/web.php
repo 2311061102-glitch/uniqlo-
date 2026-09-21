@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\CartController;
@@ -29,6 +28,20 @@ Route::get('/san-pham/{product:slug}/danh-gia', [ReviewController::class, 'index
 Route::get('/danh-muc', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/danh-muc/{category:slug}', [ProductController::class, 'byCategory'])->name('products.category');
 
+/*
+|--------------------------------------------------------------------------
+| Route CÔNG KHAI cho MoMo — KHÔNG được đặt trong middleware 'auth', vì:
+| - payments.momo.return: trình duyệt khách được MoMo redirect về, có thể
+|   session đã hết hạn giữa lúc thanh toán, không nên bắt đăng nhập lại.
+| - payments.momo.notify: SERVER của MoMo gọi vào thẳng (không phải trình
+|   duyệt), chắc chắn không có session đăng nhập nào cả.
+|--------------------------------------------------------------------------
+*/
+Route::get('/thanh-toan/momo/ket-qua', [PaymentController::class, 'momoReturn'])->name('payments.momo.return');
+Route::post('/thanh-toan/momo/thong-bao', [PaymentController::class, 'momoNotify'])->name('payments.momo.notify');
+Route::get('/thanh-toan/vnpay/return', [PaymentController::class, 'vnpayReturn'])->name('payments.vnpay.return');
+Route::get('/thanh-toan/vnpay/ipn', [PaymentController::class, 'vnpayIpn'])->name('payments.vnpay.ipn');
+
 Route::middleware('guest')->group(function () {
     Route::get('/dang-ky', [AuthController::class, 'showRegisterForm'])->name('register');
     Route::post('/dang-ky', [AuthController::class, 'register'])
@@ -37,8 +50,6 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/dang-nhap', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/dang-nhap', [AuthController::class, 'login'])->name('login.store');
-    Route::get('/dang-nhap/google', [GoogleController::class, 'redirect'])->name('login.google');
-    Route::get('/dang-nhap/google/callback', [GoogleController::class, 'callback'])->name('login.google.callback');
 
     Route::get('/quen-mat-khau', [ForgotPasswordController::class, 'show'])->name('password.request');
     Route::post('/quen-mat-khau', [ForgotPasswordController::class, 'send'])
@@ -82,14 +93,14 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/don-hang', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/don-hang/{order}', [OrderController::class, 'show'])->name('orders.show');
-    Route::get('/don-hang/{order}/theo-doi', [OrderController::class, 'tracking'])->name('orders.tracking');
     Route::post('/don-hang/{order}/huy', [OrderController::class, 'cancel'])->name('orders.cancel');
 
-    // --- Mới thêm ở Giai đoạn 4 (Thanh toán): VietQR ---
     Route::get('/don-hang/{order}/thanh-toan-vietqr', [PaymentController::class, 'vietqr'])->name('payments.vietqr');
 
-    // "role:admin": lớp phòng thủ THỨ 2 ở tầng route, cộng thêm với kiểm tra
-    // isAdmin() ngay trong Controller — dù thiếu 1 trong 2 lớp, lớp còn lại vẫn chặn được.
+    // Mới thêm ở Giai đoạn 5: khởi tạo thanh toán MoMo (route return/notify công khai đã đặt ở trên)
+    Route::get('/don-hang/{order}/thanh-toan-momo', [PaymentController::class, 'momo'])->name('payments.momo.pay');
+    Route::get('/don-hang/{order}/thanh-toan-vnpay', [PaymentController::class, 'vnpay'])->name('payments.vnpay.pay');
+
     Route::post('/don-hang/{order}/xac-nhan-thanh-toan', [OrderController::class, 'confirmPayment'])
         ->middleware('role:admin')
         ->name('orders.confirmPayment');

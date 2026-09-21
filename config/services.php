@@ -35,4 +35,18 @@ return [
         'account_name' => env('VIETQR_ACCOUNT_NAME'),
     ],
 
+    'momo' => [
+        'partner_code' => env('MOMO_PARTNER_CODE'),
+        'access_key' => env('MOMO_ACCESS_KEY'),
+        'secret_key' => env('MOMO_SECRET_KEY'),
+        'endpoint' => env('MOMO_ENDPOINT'),
+    ],
+
+    'vnpay' => [
+        'tmn_code' => env('VNPAY_TMN_CODE'),
+        'hash_secret' => env('VNPAY_HASH_SECRET'),
+        'payment_url' => env('VNPAY_PAYMENT_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
+        'return_url' => env('VNPAY_RETURN_URL', env('APP_URL').'/thanh-toan/vnpay/return'),
+        'ipn_url' => env('VNPAY_IPN_URL', env('APP_URL').'/thanh-toan/vnpay/ipn'),
+    ],
 ];
