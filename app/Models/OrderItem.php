@@ -7,15 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class OrderItem extends Model
 {
     protected $fillable = [
-        'order_id', 'product_id', 'product_variant_id',
-        'product_name', 'variant_size', 'variant_color',
-        'unit_price', 'quantity', 'subtotal',
+        'order_id', 'product_variant_id', 'product_name', 'variant_label',
+        'price', 'quantity', 'subtotal',
     ];
 
     protected function casts(): array
     {
         return [
-            'unit_price' => 'integer',
+            'price' => 'decimal:2',
             'quantity' => 'integer',
             'subtotal' => 'integer',
         ];

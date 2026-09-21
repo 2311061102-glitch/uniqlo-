@@ -1,0 +1,9 @@
+.address-map-picker { margin: 1.25rem 0; }
+.address-map-picker__heading { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:.65rem; }
+.address-map-picker__heading label { font-weight:600; }
+.address-map-picker__optional { color:#777; font-weight:400; font-size:.85em; }
+.address-map-picker__hint { margin:.25rem 0 0; color:#666; font-size:.88rem; }
+.address-map-picker__map { min-height:300px; border:1px solid #ddd; border-radius:12px; overflow:hidden; z-index:0; }
+.address-map-picker__locate { white-space:nowrap; }
+.address-map-picker__coordinates { margin:.45rem 0 0; color:#4b5563; font-size:.82rem; }
+@media (max-width: 640px) { .address-map-picker__heading { flex-direction:column; } }

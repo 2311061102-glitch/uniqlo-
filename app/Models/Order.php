@@ -3,25 +3,36 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Str;
 
 class Order extends Model
 {
     protected $fillable = [
-        'user_id', 'order_code',
-        'recipient_name', 'phone', 'province', 'district', 'ward', 'address_detail',
-        'subtotal', 'shipping_fee', 'discount_amount', 'total_amount',
+        'user_id', 'order_code', 'voucher_id',
+        'recipient_name', 'recipient_phone', 'province', 'district', 'ward', 'address_detail',
+        'subtotal_amount', 'shipping_fee', 'discount_amount', 'total_amount',
         'payment_method', 'payment_status', 'order_status', 'note',
     ];
 
     protected function casts(): array
     {
         return [
-            'subtotal' => 'integer',
+            'subtotal_amount' => 'decimal:2',
             'shipping_fee' => 'integer',
             'discount_amount' => 'integer',
             'total_amount' => 'integer',
         ];
+    }
+
+    protected function phone(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->recipient_phone);
+    }
+
+    protected function subtotal(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->subtotal_amount);
     }
 
     /**
@@ -50,6 +61,11 @@ class Order extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
     }
 
     public function scopePending($query)

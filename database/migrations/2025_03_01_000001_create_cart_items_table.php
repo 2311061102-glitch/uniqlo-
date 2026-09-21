@@ -14,6 +14,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Superseded by the cart-based migration introduced after the merge.
+        return;
+
+        if (Schema::hasTable('cart_items')) {
+            return;
+        }
+
         Schema::create('cart_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();

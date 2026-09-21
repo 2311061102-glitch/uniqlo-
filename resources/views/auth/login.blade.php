@@ -38,7 +38,9 @@
             <button type="submit" class="btn-primary">Đăng nhập</button>
         </form>
 
-        <a href="{{ route('login.google') }}" class="btn-secondary" style="display:block; text-align:center; margin-top:12px; text-decoration:none;">Đăng nhập bằng Google</a>
+        @if (Route::has('login.google'))
+            <a href="{{ route('login.google') }}" class="btn-secondary" style="display:block; text-align:center; margin-top:12px; text-decoration:none;">Đăng nhập bằng Google</a>
+        @endif
 
         <p class="auth-card__footer">
             Chưa có tài khoản? <a href="{{ route('register') }}">Đăng ký ngay</a>

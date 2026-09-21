@@ -64,9 +64,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
     // --- Mới thêm cho phần Thanh toán (Thành viên 3) ---
 
-    public function cartItems()
+    public function cart()
     {
-        return $this->hasMany(CartItem::class);
+        return $this->hasOne(Cart::class);
     }
 
     public function orders()

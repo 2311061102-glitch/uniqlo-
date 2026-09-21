@@ -16,6 +16,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Superseded by the canonical order migration introduced after the merge.
+        return;
+
+        if (Schema::hasTable('orders')) {
+            return;
+        }
+
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();

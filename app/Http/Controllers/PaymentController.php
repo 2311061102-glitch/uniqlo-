@@ -33,9 +33,9 @@ class PaymentController extends Controller
         try {
             return redirect()->away($vnpay->createPaymentUrl($order, $request));
         } catch (\RuntimeException $exception) {
-            $order->payments()->where('method', 'vnpay')->latest()->first()?->update([
+            $order->payments()->where('payment_method', 'vnpay')->latest()->first()?->update([
                 'status' => 'failed',
-                'gateway_response' => ['error' => $exception->getMessage()],
+                'raw_webhook_payload' => ['error' => $exception->getMessage()],
             ]);
 
             return redirect()->route('orders.show', $order)->with('error', $exception->getMessage());
@@ -70,7 +70,7 @@ class PaymentController extends Controller
             return response()->json(['RspCode' => '04', 'Message' => 'Invalid amount']);
         }
 
-        $payment = $order->payments()->where('method', 'vnpay')->latest()->first();
+        $payment = $order->payments()->where('payment_method', 'vnpay')->latest()->first();
         if (! $payment) return response()->json(['RspCode' => '01', 'Message' => 'Payment not found']);
 
         $paid = $request->query('vnp_ResponseCode') === '00'
@@ -78,7 +78,7 @@ class PaymentController extends Controller
         $payment->update([
             'status' => $paid ? 'success' : 'failed',
             'gateway_transaction_id' => $request->query('vnp_TransactionNo'),
-            'gateway_response' => $request->query(),
+            'raw_webhook_payload' => $request->query(),
             'paid_at' => $paid ? now() : null,
         ]);
         $order->update([

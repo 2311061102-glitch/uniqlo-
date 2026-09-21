@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Services\CartService;
 
 class AuthController extends Controller
 {
@@ -34,6 +35,7 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+        CartService::mergeGuestCartIntoUser($user);
 
         // Gửi email xác thực ngay sau khi tạo tài khoản. Đây là hàm có sẵn của Laravel
         // (đến từ trait MustVerifyEmail gắn ở Model User) — tự soạn email, tự sinh link
@@ -85,6 +87,7 @@ class AuthController extends Controller
         RateLimiter::clear($throttleKey);
 
         $request->session()->regenerate();
+        CartService::mergeGuestCartIntoUser($request->user());
 
         return redirect()->intended(route('home'));
     }

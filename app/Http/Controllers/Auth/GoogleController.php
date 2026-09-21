@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use App\Services\CartService;
 
 class GoogleController extends Controller
 {
@@ -42,6 +43,7 @@ class GoogleController extends Controller
 
         Auth::login($user, true);
         request()->session()->regenerate();
+        CartService::mergeGuestCartIntoUser($user);
 
         return redirect()->intended(route('home'));
     }

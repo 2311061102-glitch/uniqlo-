@@ -42,4 +42,11 @@ return [
         'return_url' => env('VNPAY_RETURN_URL', env('APP_URL').'/thanh-toan/vnpay/return'),
         'ipn_url' => env('VNPAY_IPN_URL', env('APP_URL').'/thanh-toan/vnpay/ipn'),
     ],
+
+    'shipping' => [
+        'warehouse_name' => env('SHIPPING_WAREHOUSE_NAME', 'Trường Đại học Tài nguyên và Môi trường Hà Nội (41A Phú Diễn)'),
+        'warehouse_latitude' => (float) env('SHIPPING_WAREHOUSE_LATITUDE', 21.0712),
+        'warehouse_longitude' => (float) env('SHIPPING_WAREHOUSE_LONGITUDE', 105.7489),
+        'free_threshold' => (float) env('SHIPPING_FREE_THRESHOLD', 500000),
+    ],
 ];

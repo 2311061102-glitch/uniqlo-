@@ -4,30 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\CartItem;
 use App\Models\ProductVariant;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
-    /**
-     * GET /gio-hang — hiện toàn bộ sản phẩm trong giỏ của user đang đăng nhập.
-     */
     public function index(Request $request)
     {
-        $cartItems = $request->user()->cartItems()
-            ->with('variant.product.images')
-            ->latest()
-            ->get();
-
+        $cart = CartService::currentCart($request);
+        $cartItems = $cart?->items()->with('variant.product.images')->latest()->get() ?? collect();
         $subtotal = $cartItems->sum(fn ($item) => $item->subtotal);
 
         return view('cart.index', compact('cartItems', 'subtotal'));
     }
 
-    /**
-     * POST /gio-hang — thêm 1 biến thể (size+màu cụ thể) vào giỏ.
-     * Nếu biến thể đó ĐÃ có trong giỏ, cộng dồn số lượng thay vì tạo dòng mới
-     * (nhờ ràng buộc unique(user_id, product_variant_id) đã đặt ở Giai đoạn 1).
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -35,64 +25,64 @@ class CartController extends Controller
             'quantity' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $variant = ProductVariant::findOrFail($validated['product_variant_id']);
-        $quantityToAdd = $validated['quantity'] ?? 1;
+        return $this->addVariant($request, ProductVariant::findOrFail($validated['product_variant_id']), $validated['quantity'] ?? 1);
+    }
 
-        $cartItem = $request->user()->cartItems()->firstOrNew([
-            'product_variant_id' => $variant->id,
-        ]);
+    public function add(Request $request, ProductVariant $variant)
+    {
+        $quantity = $request->validate(['quantity' => ['nullable', 'integer', 'min:1']])['quantity'] ?? 1;
 
-        $newQuantity = ($cartItem->exists ? $cartItem->quantity : 0) + $quantityToAdd;
+        return $this->addVariant($request, $variant, $quantity);
+    }
 
-        // Không cho thêm vượt quá số lượng tồn kho hiện có của ĐÚNG biến thể này
+    private function addVariant(Request $request, ProductVariant $variant, int $quantity)
+    {
+        $cart = CartService::currentCart($request);
+        $cartItem = $cart->items()->firstOrNew(['product_variant_id' => $variant->id]);
+        $newQuantity = ($cartItem->exists ? $cartItem->quantity : 0) + $quantity;
+
         if ($newQuantity > $variant->stock_quantity) {
-            return back()->with('error', 'Số lượng vượt quá tồn kho hiện có (còn '.$variant->stock_quantity.' sản phẩm).');
+            return back()->with('error', 'Số lượng vượt quá tồn kho hiện có.');
         }
 
-        $cartItem->user_id = $request->user()->id;
         $cartItem->quantity = $newQuantity;
         $cartItem->save();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'cart_count' => CartService::currentCart($request, false)?->totalQuantity() ?? 0]);
+        }
 
         return back()->with('success', 'Đã thêm vào giỏ hàng!');
     }
 
-    /**
-     * PUT /gio-hang/{cartItem} — đổi số lượng của 1 dòng trong giỏ.
-     */
     public function update(Request $request, CartItem $cartItem)
     {
-        $this->authorizeOwner($cartItem);
-
-        $validated = $request->validate([
-            'quantity' => ['required', 'integer', 'min:1'],
-        ]);
-
-        if ($validated['quantity'] > $cartItem->variant->stock_quantity) {
-            return back()->with('error', 'Số lượng vượt quá tồn kho hiện có (còn '.$cartItem->variant->stock_quantity.' sản phẩm).');
-        }
-
-        $cartItem->update(['quantity' => $validated['quantity']]);
+        $this->authorizeOwner($request, $cartItem);
+        $quantity = $request->validate(['quantity' => ['required', 'integer', 'min:1']])['quantity'];
+        abort_if($quantity > $cartItem->variant->stock_quantity, 422, 'Số lượng vượt quá tồn kho hiện có.');
+        $cartItem->update(['quantity' => $quantity]);
 
         return back()->with('success', 'Đã cập nhật số lượng.');
     }
 
-    /**
-     * DELETE /gio-hang/{cartItem} — xóa 1 sản phẩm khỏi giỏ.
-     */
-    public function destroy(CartItem $cartItem)
+    public function destroy(Request $request, CartItem $cartItem)
     {
-        $this->authorizeOwner($cartItem);
-
+        $this->authorizeOwner($request, $cartItem);
         $cartItem->delete();
 
         return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng.');
     }
 
-    /**
-     * Chặn user A thao tác vào giỏ hàng của user B (giống pattern IDOR ở sổ địa chỉ).
-     */
-    private function authorizeOwner(CartItem $cartItem): void
+    public function clear(Request $request)
     {
-        abort_if($cartItem->user_id !== auth()->id(), 403, 'Bạn không có quyền thao tác với giỏ hàng này.');
+        CartService::currentCart($request, false)?->items()->delete();
+
+        return back()->with('success', 'Đã xóa toàn bộ giỏ hàng.');
+    }
+
+    private function authorizeOwner(Request $request, CartItem $cartItem): void
+    {
+        $cart = CartService::currentCart($request, false);
+        abort_unless($cart && $cartItem->cart_id === $cart->id, 403, 'Bạn không có quyền thao tác với giỏ hàng này.');
     }
 }

@@ -1,0 +1,152 @@
+/* ============================================================
+   ADMIN LAYOUT — khu vực quản trị (hiện chỉ có Voucher)
+   ============================================================ */
+
+.admin-body {
+  margin: 0;
+  background: #f5f5f5;
+}
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 220px;
+  background: #1a1a1a;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing24, 24px) var(--spacing16, 16px);
+  flex-shrink: 0;
+}
+
+.admin-sidebar__logo {
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-bold, 700);
+  margin-bottom: var(--spacing24, 24px);
+}
+
+.admin-sidebar__logo span {
+  color: #999;
+  font-weight: 400;
+  font-size: 0.875rem;
+}
+
+.admin-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing8, 8px);
+  flex: 1;
+}
+
+.admin-sidebar__nav a {
+  color: #ccc;
+  padding: var(--spacing12, 12px);
+  border-radius: 4px;
+  font-size: 0.9375rem;
+}
+
+.admin-sidebar__nav a:hover,
+.admin-sidebar__nav a.is-active {
+  background: #333;
+  color: #fff;
+}
+
+.admin-sidebar__back {
+  color: #999;
+  font-size: 0.8125rem;
+  margin-top: var(--spacing16, 16px);
+}
+
+.admin-content {
+  flex: 1;
+  padding: var(--spacing24, 24px) var(--spacing48, 48px);
+  max-width: 1100px;
+}
+
+.admin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing16, 16px);
+}
+
+.admin-form {
+  background: #fff;
+  padding: var(--spacing24, 24px);
+  border-radius: 6px;
+  max-width: 600px;
+  margin-bottom: var(--spacing16, 16px);
+}
+
+.admin-table {
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* ============================================================
+   VOUCHER CARD — trang khách hàng xem mã giảm giá
+   ============================================================ */
+
+.voucher-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing16, 16px);
+}
+
+@media (max-width: 900px) {
+  .voucher-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .voucher-grid { grid-template-columns: 1fr; }
+}
+
+.voucher-card {
+  background: #fff;
+  border: 1px dashed #b3261e;
+  border-radius: 8px;
+  padding: var(--spacing16, 16px);
+}
+
+.voucher-card__value {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold, 700);
+  color: #b3261e;
+}
+
+.voucher-card__cap {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #666;
+  display: block;
+}
+
+.voucher-card__condition {
+  font-size: 0.8125rem;
+  color: #555;
+  margin-top: var(--spacing8, 8px);
+}
+
+.voucher-card__expiry {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 4px;
+}
+
+.voucher-card__code-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing12, 12px);
+  padding-top: var(--spacing12, 12px);
+  border-top: 1px dashed var(--border-lines-color, #dadada);
+}
+
+.voucher-card__code {
+  font-weight: var(--font-weight-bold, 700);
+  letter-spacing: 1px;
+}

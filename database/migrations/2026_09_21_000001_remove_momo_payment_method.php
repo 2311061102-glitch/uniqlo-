@@ -16,24 +16,42 @@ return new class extends Migration
             return;
         }
 
-        DB::table('orders')->where('payment_method', 'momo')->update(['payment_method' => 'cod']);
-        DB::table('payments')->where('method', 'momo')->update(['method' => 'cod']);
+        if (Schema::hasColumn('orders', 'payment_method')) {
+            DB::table('orders')->where('payment_method', 'momo')->update(['payment_method' => 'cod']);
+        }
+
+        $paymentMethodColumn = Schema::hasColumn('payments', 'method') ? 'method' : 'payment_method';
+        if (Schema::hasColumn('payments', $paymentMethodColumn)) {
+            DB::table('payments')->where($paymentMethodColumn, 'momo')->update([$paymentMethodColumn => 'cod']);
+        }
 
         if (Schema::getConnection()->getDriverName() !== 'mysql') {
             return;
         }
 
-        DB::statement("ALTER TABLE orders MODIFY payment_method ENUM('cod', 'vietqr', 'vnpay') NOT NULL");
-        DB::statement("ALTER TABLE payments MODIFY method ENUM('cod', 'vietqr', 'vnpay') NOT NULL");
+        if (Schema::getColumnType('orders', 'payment_method') === 'enum') {
+            DB::statement("ALTER TABLE orders MODIFY payment_method ENUM('cod', 'vietqr', 'vnpay') NOT NULL");
+        }
+
+        if ($paymentMethodColumn === 'method' && Schema::getColumnType('payments', 'method') === 'enum') {
+            DB::statement("ALTER TABLE payments MODIFY method ENUM('cod', 'vietqr', 'vnpay') NOT NULL");
+        }
     }
 
     public function down(): void
     {
+        $paymentMethodColumn = Schema::hasColumn('payments', 'method') ? 'method' : 'payment_method';
+
         if (Schema::getConnection()->getDriverName() !== 'mysql') {
             return;
         }
 
-        DB::statement("ALTER TABLE orders MODIFY payment_method ENUM('cod', 'vietqr', 'vnpay') NOT NULL");
-        DB::statement("ALTER TABLE payments MODIFY method ENUM('cod', 'vietqr', 'vnpay') NOT NULL");
+        if (Schema::getColumnType('orders', 'payment_method') === 'enum') {
+            DB::statement("ALTER TABLE orders MODIFY payment_method ENUM('cod', 'vietqr', 'vnpay') NOT NULL");
+        }
+
+        if ($paymentMethodColumn === 'method' && Schema::getColumnType('payments', 'method') === 'enum') {
+            DB::statement("ALTER TABLE payments MODIFY method ENUM('cod', 'vietqr', 'vnpay') NOT NULL");
+        }
     }
 };

@@ -14,6 +14,8 @@ class Address extends Model
         'district',
         'ward',
         'address_detail',
+        'latitude',
+        'longitude',
         'is_default',
     ];
 
@@ -21,6 +23,8 @@ class Address extends Model
     {
         return [
             'is_default' => 'boolean',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 

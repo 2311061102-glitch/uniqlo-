@@ -14,6 +14,9 @@
             <button type="button" class="account-menu__item" data-account-tab="addresses">Sổ địa chỉ <span>{{ $addresses->count() }}</span></button>
             <button type="button" class="account-menu__item" data-account-tab="orders">Đơn hàng của tôi <span>{{ $orders->count() }}</span></button>
             <button type="button" class="account-menu__item" data-account-tab="security">Bảo mật tài khoản</button>
+            <a href="{{ route('vouchers.index') }}" class="account-menu__item account-menu__link">
+                <span>Voucher / Mã giảm giá</span><span>›</span>
+            </a>
         </nav>
     </aside>
 

@@ -12,6 +12,8 @@
 
     <link rel="stylesheet" href="{{ asset('css/uniqlo-full-combined.css') }}">
     <link rel="stylesheet" href="{{ asset('css/site.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/vouchers.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/address-map.css') }}">
 </head>
 <body>
 
@@ -56,10 +58,19 @@
             <a href="{{ route('products.index') }}">Sản phẩm</a>
             <a href="{{ route('categories.index') }}">Danh mục</a>
 
+            @guest
+                <a href="{{ route('cart.index') }}" class="site-header__action" aria-label="Cart" title="Cart">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H6"/></svg>
+                    @if ($cartCount = \App\Services\CartCounter::count())
+                        <span class="site-header__badge">{{ $cartCount }}</span>
+                    @endif
+                </a>
+            @endguest
+
             @auth
                 <a href="{{ route('cart.index') }}" class="site-header__action" aria-label="Giỏ hàng" title="Giỏ hàng">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H6M10 20a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm9 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>
-                    @if ($cartCount = auth()->user()->cartItems()->sum('quantity'))
+                    @if ($cartCount = \App\Services\CartCounter::count())
                         <span class="site-header__badge">{{ $cartCount }}</span>
                     @endif
                 </a>

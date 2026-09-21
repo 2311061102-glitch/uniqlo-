@@ -15,6 +15,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Superseded by the canonical payments migration introduced after the merge.
+        return;
+
+        if (Schema::hasTable('payments')) {
+            return;
+        }
+
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
