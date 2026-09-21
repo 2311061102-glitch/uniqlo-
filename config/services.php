@@ -34,6 +34,13 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/dang-nhap/google/callback'),
+    ],
+
     'vietqr' => [
         'bank_bin'     => env('VIETQR_BANK_BIN'),
         'bank_name'    => env('VIETQR_BANK_NAME'),

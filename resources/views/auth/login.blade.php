@@ -35,7 +35,7 @@
             <button type="submit" class="btn-primary">Đăng nhập</button>
         </form>
 
-        @if (Route::has('login.google'))
+        @if (Route::has('login.google') && config('services.google.client_id') && config('services.google.client_secret'))
             <a href="{{ route('login.google') }}" class="btn-secondary" style="display:block; text-align:center; margin-top:12px; text-decoration:none;">Đăng nhập bằng Google</a>
         @endif
 

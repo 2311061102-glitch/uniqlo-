@@ -14,6 +14,10 @@ class GoogleController extends Controller
 {
     public function redirect()
     {
+        if (! config('services.google.client_id') || ! config('services.google.client_secret')) {
+            return redirect()->route('login')->with('error', 'Đăng nhập Google chưa được cấu hình. Vui lòng dùng email và mật khẩu.');
+        }
+
         return Socialite::driver('google')->redirect();
     }
 
