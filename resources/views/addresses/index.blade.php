@@ -3,8 +3,8 @@
 @section('title', 'Sổ địa chỉ')
 
 @section('content')
-<div class="address-page">
-    <div class="address-page__header">
+<div class="address-page" style="max-width: 800px; margin: 0 auto; padding: 20px 0;">
+    <div class="address-page__header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <h1 class="auth-card__title">Sổ địa chỉ giao hàng</h1>
         <a href="{{ route('addresses.create') }}" class="btn-primary btn-primary--inline">+ Thêm địa chỉ mới</a>
     </div>
@@ -25,7 +25,7 @@
                     {{ $address->address_detail }}, {{ $address->ward }}, {{ $address->district }}, {{ $address->province }}
                 </p>
 
-                <div class="address-card__actions">
+                <div class="address-card__actions" style="display: flex; align-items: center; gap: 16px; margin-top: 12px;">
                     <a href="{{ route('addresses.edit', $address) }}">Sửa</a>
 
                     @if (! $address->is_default)

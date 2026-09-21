@@ -34,7 +34,7 @@ class RegisterRequest extends FormRequest
             'password' => [
                 'required',
                 'confirmed', // bắt buộc có field password_confirmation khớp giá trị
-                Password::min(8)->mixedCase()->numbers(),
+                Password::min(8)->max(20)->mixedCase()->numbers(),
             ],
         ];
     }

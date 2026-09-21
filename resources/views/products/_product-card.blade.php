@@ -1,7 +1,7 @@
 {{-- File này được @include vào trang danh sách, trang chủ, trang tìm kiếm... --}}
 <a href="{{ route('products.show', $product) }}" class="product-card">
     @if ($product->primary_image)
-        <img src="{{ asset('storage/'.$product->primary_image->image_path) }}"
+        <img src="{{ $product->primary_image->url }}"
              alt="{{ $product->name }}" class="product-card__image">
     @else
         <div class="product-card__image"></div>

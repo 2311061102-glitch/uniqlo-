@@ -2,18 +2,6 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Third Party Services
-    |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
-    */
-
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
@@ -42,14 +30,17 @@ return [
     ],
 
     'vietqr' => [
-        'bank_bin'     => env('VIETQR_BANK_BIN'),
-        'bank_name'    => env('VIETQR_BANK_NAME'),
-        'account_no'   => env('VIETQR_ACCOUNT_NO'),
+        'bank_bin' => env('VIETQR_BANK_BIN'),
+        'account_no' => env('VIETQR_ACCOUNT_NO'),
         'account_name' => env('VIETQR_ACCOUNT_NAME'),
     ],
- 
-    'sepay' => [
-        'webhook_api_key' => env('SEPAY_WEBHOOK_API_KEY'),
+
+    'vnpay' => [
+        'tmn_code' => env('VNPAY_TMN_CODE'),
+        'hash_secret' => env('VNPAY_HASH_SECRET'),
+        'payment_url' => env('VNPAY_PAYMENT_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
+        'return_url' => env('VNPAY_RETURN_URL', env('APP_URL').'/thanh-toan/vnpay/return'),
+        'ipn_url' => env('VNPAY_IPN_URL', env('APP_URL').'/thanh-toan/vnpay/ipn'),
     ],
 
     'shipping' => [

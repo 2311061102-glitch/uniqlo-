@@ -22,7 +22,6 @@ class Order extends Model
             'shipping_fee' => 'integer',
             'discount_amount' => 'integer',
             'total_amount' => 'integer',
-            'qr_expires_at' => 'datetime',
         ];
     }
 
@@ -54,19 +53,14 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function voucher()
-    {
-        return $this->belongsTo(Voucher::class);
-    }
-
-    public function address()
-    {
-        return $this->belongsTo(Address::class);
-    }
-
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
     }
 
     public function payment()
@@ -77,16 +71,5 @@ class Order extends Model
     public function scopePending($query)
     {
         return $query->where('order_status', 'pending');
-    }
-
-    /**
-     * Ghép địa chỉ đầy đủ thành 1 dòng để hiển thị, VD:
-     * "12 Nguyễn Trãi, Phường 5, Quận 1, TP.HCM"
-     */
-    public function fullAddress(): string
-    {
-        return implode(', ', array_filter([
-            $this->address_detail, $this->ward, $this->district, $this->province,
-        ]));
     }
 }

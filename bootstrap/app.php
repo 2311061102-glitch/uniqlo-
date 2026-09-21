@@ -15,16 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
 
-        // Route webhook nhận POST từ server SePay, không có CSRF token của Laravel
-        // -> phải loại trừ, nếu không Laravel sẽ chặn với lỗi 419 Page Expired.
         $middleware->validateCsrfTokens(except: [
-            'webhooks/sepay',
+            'thanh-toan/vnpay/ipn',
         ]);
-
-        // Khi chạy sau ngrok (hoặc bất kỳ proxy/CDN nào), Laravel cần được báo
-        // "tin tưởng" header X-Forwarded-* từ proxy để tự nhận đúng là đang chạy
-        // https, tránh sinh nhầm link http:// trong lúc demo qua ngrok.
-        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

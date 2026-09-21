@@ -18,9 +18,4 @@
         </p>
     </div>
 </div>
-
-@push('scripts')
-    <script src="{{ asset('js/location-picker.js') }}"></script>
-@endpush
-
 @endsection
