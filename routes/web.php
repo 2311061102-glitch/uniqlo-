@@ -17,8 +17,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\VoucherController;
-use App\Http\Controllers\Admin\VoucherController as AdminVoucherController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SepayWebhookController;
 
 /*
@@ -118,11 +117,8 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
+Route::middleware('auth')->group(function () {
     Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/thanh-toan/voucher', [CheckoutController::class, 'applyVoucher'])->name('checkout.voucher.apply');
-    Route::delete('/thanh-toan/voucher', [CheckoutController::class, 'removeVoucher'])->name('checkout.voucher.remove');
-    Route::post('/thanh-toan/khu-vuc', [CheckoutController::class, 'updateRegion'])->name('checkout.region');
-    Route::post('/thanh-toan/dia-chi', [CheckoutController::class, 'updateAddress'])->name('checkout.address');
     Route::post('/thanh-toan', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::post('/thanh-toan/voucher', [CheckoutController::class, 'applyVoucher'])->name('checkout.voucher.apply');
     Route::delete('/thanh-toan/voucher', [CheckoutController::class, 'removeVoucher'])->name('checkout.voucher.remove');
@@ -131,7 +127,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/don-hang-cua-toi/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/don-hang-cua-toi/{order}/huy', [OrderController::class, 'cancel'])->name('orders.cancel');
 
-
+    Route::get('/don-hang-cua-toi/{order}/thanh-toan-vietqr', [PaymentController::class, 'vietqr'])->name('payments.vietqr');
+    Route::get('/don-hang-cua-toi/{order}/thanh-toan-vnpay', [PaymentController::class, 'vnpay'])->name('payments.vnpay.pay');
 });
 
 Route::prefix('quan-tri/vouchers')->name('admin.vouchers.')->middleware('auth')->group(function () {
