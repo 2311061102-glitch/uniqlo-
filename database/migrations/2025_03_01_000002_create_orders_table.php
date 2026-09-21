@@ -35,7 +35,7 @@ return new class extends Migration
             $table->unsignedInteger('discount_amount')->default(0);
             $table->unsignedInteger('total_amount');    // subtotal + shipping_fee - discount_amount
 
-            $table->enum('payment_method', ['cod', 'vietqr', 'momo', 'vnpay']);
+            $table->enum('payment_method', ['cod', 'vietqr', 'vnpay']);
             $table->enum('payment_status', ['pending', 'paid', 'failed'])->default('pending');
             $table->enum('order_status', ['pending', 'confirmed', 'shipping', 'completed', 'cancelled'])
                   ->default('pending');

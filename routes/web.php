@@ -28,17 +28,6 @@ Route::get('/san-pham/{product:slug}/danh-gia', [ReviewController::class, 'index
 Route::get('/danh-muc', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/danh-muc/{category:slug}', [ProductController::class, 'byCategory'])->name('products.category');
 
-/*
-|--------------------------------------------------------------------------
-| Route CÔNG KHAI cho MoMo — KHÔNG được đặt trong middleware 'auth', vì:
-| - payments.momo.return: trình duyệt khách được MoMo redirect về, có thể
-|   session đã hết hạn giữa lúc thanh toán, không nên bắt đăng nhập lại.
-| - payments.momo.notify: SERVER của MoMo gọi vào thẳng (không phải trình
-|   duyệt), chắc chắn không có session đăng nhập nào cả.
-|--------------------------------------------------------------------------
-*/
-Route::get('/thanh-toan/momo/ket-qua', [PaymentController::class, 'momoReturn'])->name('payments.momo.return');
-Route::post('/thanh-toan/momo/thong-bao', [PaymentController::class, 'momoNotify'])->name('payments.momo.notify');
 Route::get('/thanh-toan/vnpay/return', [PaymentController::class, 'vnpayReturn'])->name('payments.vnpay.return');
 Route::get('/thanh-toan/vnpay/ipn', [PaymentController::class, 'vnpayIpn'])->name('payments.vnpay.ipn');
 
@@ -96,9 +85,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/don-hang/{order}/huy', [OrderController::class, 'cancel'])->name('orders.cancel');
 
     Route::get('/don-hang/{order}/thanh-toan-vietqr', [PaymentController::class, 'vietqr'])->name('payments.vietqr');
-
-    // Mới thêm ở Giai đoạn 5: khởi tạo thanh toán MoMo (route return/notify công khai đã đặt ở trên)
-    Route::get('/don-hang/{order}/thanh-toan-momo', [PaymentController::class, 'momo'])->name('payments.momo.pay');
     Route::get('/don-hang/{order}/thanh-toan-vnpay', [PaymentController::class, 'vnpay'])->name('payments.vnpay.pay');
 
     Route::post('/don-hang/{order}/xac-nhan-thanh-toan', [OrderController::class, 'confirmPayment'])

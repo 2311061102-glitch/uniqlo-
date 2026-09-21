@@ -35,13 +35,6 @@ return [
         'account_name' => env('VIETQR_ACCOUNT_NAME'),
     ],
 
-    'momo' => [
-        'partner_code' => env('MOMO_PARTNER_CODE'),
-        'access_key' => env('MOMO_ACCESS_KEY'),
-        'secret_key' => env('MOMO_SECRET_KEY'),
-        'endpoint' => env('MOMO_ENDPOINT'),
-    ],
-
     'vnpay' => [
         'tmn_code' => env('VNPAY_TMN_CODE'),
         'hash_secret' => env('VNPAY_HASH_SECRET'),

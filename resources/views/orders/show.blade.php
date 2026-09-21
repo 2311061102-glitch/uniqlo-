@@ -67,12 +67,6 @@
             </a>
         @endif
 
-        @if ($order->payment_method === 'momo' && $order->payment_status !== 'paid')
-            <a href="{{ route('payments.momo.pay', $order) }}" class="btn-primary btn-primary--inline" style="margin-top: 16px; display: block; text-align: center;">
-                Thanh toán lại qua MoMo
-            </a>
-        @endif
-
         @if ($order->order_status === 'pending')
             <form method="POST" action="{{ route('orders.cancel', $order) }}" style="margin-top: 16px;"
                   onsubmit="return confirm('Hủy đơn hàng này?');">

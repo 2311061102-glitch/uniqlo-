@@ -19,11 +19,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
 
-            $table->enum('method', ['cod', 'vietqr', 'momo', 'vnpay']);
+            $table->enum('method', ['cod', 'vietqr', 'vnpay']);
             $table->unsignedInteger('amount');
             $table->enum('status', ['pending', 'success', 'failed'])->default('pending');
 
-            $table->string('gateway_transaction_id')->nullable(); // mã giao dịch bên MoMo/VNPay trả về
+            $table->string('gateway_transaction_id')->nullable(); // mã giao dịch bên VNPay trả về
             $table->json('gateway_response')->nullable(); // toàn bộ dữ liệu thô cổng thanh toán gửi callback về
             $table->timestamp('paid_at')->nullable();
 

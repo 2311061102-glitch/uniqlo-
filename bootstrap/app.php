@@ -16,7 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->validateCsrfTokens(except: [
-            'thanh-toan/momo/thong-bao',
             'thanh-toan/vnpay/ipn',
         ]);
     })
