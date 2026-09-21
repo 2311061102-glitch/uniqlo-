@@ -34,5 +34,15 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'vietqr' => [
+        'bank_bin'     => env('VIETQR_BANK_BIN'),
+        'bank_name'    => env('VIETQR_BANK_NAME'),
+        'account_no'   => env('VIETQR_ACCOUNT_NO'),
+        'account_name' => env('VIETQR_ACCOUNT_NAME'),
+    ],
+ 
+    'sepay' => [
+        'webhook_api_key' => env('SEPAY_WEBHOOK_API_KEY'),
+    ],
 
 ];

@@ -24,35 +24,13 @@
     @enderror
 </div>
 
-<div class="form-group">
-    <label for="province">Tỉnh/Thành phố</label>
-    <input type="text" id="province" name="province"
-           value="{{ old('province', $address->province ?? '') }}"
-           class="form-input @error('province') form-input--error @enderror" required>
-    @error('province')
-        <p class="form-error">{{ $message }}</p>
-    @enderror
-</div>
-
-<div class="form-group">
-    <label for="district">Quận/Huyện</label>
-    <input type="text" id="district" name="district"
-           value="{{ old('district', $address->district ?? '') }}"
-           class="form-input @error('district') form-input--error @enderror" required>
-    @error('district')
-        <p class="form-error">{{ $message }}</p>
-    @enderror
-</div>
-
-<div class="form-group">
-    <label for="ward">Phường/Xã</label>
-    <input type="text" id="ward" name="ward"
-           value="{{ old('ward', $address->ward ?? '') }}"
-           class="form-input @error('ward') form-input--error @enderror" required>
-    @error('ward')
-        <p class="form-error">{{ $message }}</p>
-    @enderror
-</div>
+{{-- Ô gộp Tỉnh/Quận/Phường, bấm vào mở popup chọn kiểu Shopee --}}
+@include('components.location-picker', [
+    'idPrefix' => 'address-form',
+    'province' => old('province', $address->province ?? ''),
+    'district' => old('district', $address->district ?? ''),
+    'ward'     => old('ward', $address->ward ?? ''),
+])
 
 <div class="form-group">
     <label for="address_detail">Địa chỉ cụ thể (số nhà, tên đường)</label>

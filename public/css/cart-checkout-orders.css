@@ -1,0 +1,427 @@
+/* ============================================================
+   CART - CHECKOUT - ORDERS
+   Phần Thành viên 3. Dùng chung biến CSS Variables và class BEM
+   đã có sẵn trong site.css (--spacing*, --border-lines-color,
+   .btn-primary, .btn-secondary, .alert, .form-hint...).
+   ============================================================ */
+
+.alert--error {
+  background: #fdecea;
+  color: #b3261e;
+  border: 1px solid #f5c2be;
+}
+
+.cart-empty {
+  background: #fafafa;
+  padding: var(--spacing48, 48px);
+  text-align: center;
+  border-radius: 6px;
+}
+
+/* ---------- Bảng giỏ hàng ---------- */
+
+.cart-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--spacing24, 24px);
+}
+
+.cart-table th, .cart-table td {
+  padding: var(--spacing12, 12px);
+  border-bottom: 1px solid var(--border-lines-color, #dadada);
+  text-align: left;
+  font-size: 0.9375rem;
+  vertical-align: middle;
+}
+
+.cart-table__product {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing12, 12px);
+}
+
+.cart-table__product img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border-lines-color, #dadada);
+}
+
+.cart-table__name {
+  display: block;
+  font-weight: var(--font-weight-bold, 700);
+}
+
+.cart-table__variant {
+  display: block;
+  font-size: 0.8125rem;
+  color: #666;
+}
+
+.qty-form {
+  display: flex;
+  gap: var(--spacing8, 8px);
+  align-items: center;
+}
+
+.qty-form input {
+  width: 60px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-lines-color, #dadada);
+  border-radius: 4px;
+}
+
+.btn-remove {
+  background: none;
+  border: 1px solid #b3261e;
+  color: #b3261e;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.cart-summary {
+  background: #fafafa;
+  padding: var(--spacing24, 24px);
+  border-radius: 6px;
+  text-align: right;
+}
+
+.cart-summary__total {
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-bold, 700);
+}
+
+.cart-summary__total span {
+  color: #b3261e;
+}
+
+.cart-summary__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing12, 12px);
+  margin-top: var(--spacing16, 16px);
+  flex-wrap: wrap;
+}
+
+/* ---------- Checkout ---------- */
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--spacing24, 24px);
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .checkout-layout { grid-template-columns: 1fr; }
+}
+
+.checkout-form {
+  background: #fafafa;
+  padding: var(--spacing24, 24px);
+  border-radius: 6px;
+}
+
+.checkout-form .form-group {
+  margin-bottom: var(--spacing16, 16px);
+}
+
+.checkout-form label {
+  display: block;
+  font-weight: var(--font-weight-bold, 700);
+  margin-bottom: var(--spacing8, 8px);
+}
+
+.checkout-form select {
+  width: 100%;
+  padding: var(--spacing12, 12px);
+  border: 1px solid var(--border-lines-color, #dadada);
+  border-radius: 4px;
+}
+
+.address-option {
+  display: flex;
+  gap: var(--spacing8, 8px);
+  align-items: flex-start;
+  padding: var(--spacing12, 12px);
+  border: 1px solid var(--border-lines-color, #dadada);
+  border-radius: 4px;
+  margin-bottom: var(--spacing8, 8px);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.checkout-summary {
+  background: #fafafa;
+  padding: var(--spacing24, 24px);
+  border-radius: 6px;
+}
+
+.checkout-summary__item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  padding: var(--spacing8, 8px) 0;
+  border-bottom: 1px solid var(--border-lines-color, #dadada);
+}
+
+.checkout-summary__line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  padding: 6px 0;
+  color: #555;
+}
+
+.checkout-summary__line--discount {
+  color: #1a7f4a;
+  font-weight: var(--font-weight-bold, 700);
+}
+
+.checkout-summary__total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--spacing12, 12px);
+  padding-top: var(--spacing12, 12px);
+  border-top: 1px solid var(--border-lines-color, #dadada);
+  font-weight: var(--font-weight-bold, 700);
+  font-size: 1.0625rem;
+}
+
+.checkout-summary__total span {
+  color: #b3261e;
+}
+
+/* Voucher */
+.voucher-form {
+  display: flex;
+  gap: var(--spacing8, 8px);
+}
+
+.voucher-form input {
+  flex: 1;
+  padding: var(--spacing8, 8px);
+  border: 1px solid var(--border-lines-color, #dadada);
+  border-radius: 4px;
+}
+
+.voucher-applied {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #eafaf0;
+  padding: var(--spacing8, 8px) var(--spacing12, 12px);
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+/* ---------- Trang thanh toán QR / chuyển khoản ---------- */
+
+.payment-page {
+  background: #fafafa;
+  padding: var(--spacing48, 48px);
+  border-radius: 6px;
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.qr-box img {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  margin: var(--spacing16, 16px) auto;
+  border: 1px solid var(--border-lines-color, #dadada);
+  border-radius: 6px;
+  padding: var(--spacing8, 8px);
+}
+
+.bank-info {
+  background: #fff;
+  border: 1px solid var(--border-lines-color, #dadada);
+  border-radius: 6px;
+  padding: var(--spacing16, 16px);
+  text-align: left;
+  margin: var(--spacing16, 16px) 0;
+}
+
+/* ---------- Trang thành công / chi tiết đơn hàng ---------- */
+
+.success-page, .order-summary {
+  background: #fafafa;
+  padding: var(--spacing24, 24px);
+  border-radius: 6px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.success-page__actions {
+  display: flex;
+  gap: var(--spacing12, 12px);
+  margin-top: var(--spacing16, 16px);
+}
+
+.order-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--spacing16, 16px) 0;
+}
+
+.order-detail-table th, .order-detail-table td {
+  padding: var(--spacing8, 8px);
+  border-bottom: 1px solid var(--border-lines-color, #dadada);
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.cancel-order-form {
+  margin-top: var(--spacing16, 16px);
+}
+
+/* ---------- Trạng thái đơn hàng ---------- */
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold, 700);
+  text-transform: capitalize;
+}
+
+.status-badge--pending    { background: #fff3cd; color: #856404; }
+.status-badge--processing { background: #cce5ff; color: #004085; }
+.status-badge--shipping   { background: #d1ecf1; color: #0c5460; }
+.status-badge--completed  { background: #d4edda; color: #155724; }
+.status-badge--cancelled  { background: #f8d7da; color: #721c24; }
+
+/* ---------- Bảng dùng chung (lịch sử đơn hàng) ---------- */
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th, .admin-table td {
+  padding: var(--spacing12, 12px);
+  border-bottom: 1px solid var(--border-lines-color, #dadada);
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+/* ---------- Ô nhập số lượng ở trang chi tiết sản phẩm ---------- */
+
+.add-to-cart-row {
+  display: flex;
+  gap: var(--spacing8, 8px);
+  align-items: center;
+}
+
+.quantity-input {
+  width: 70px;
+  padding: var(--spacing12, 12px) var(--spacing8, 8px);
+  border: 1px solid var(--border-lines-color, #dadada);
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* ============================================================
+   THANH TOÁN VIETQR + SEPAY — khung "đang chờ xác nhận tự động"
+   ============================================================ */
+
+.payment-status-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing8, 8px);
+  background: #fff3cd;
+  color: #856404;
+  padding: var(--spacing12, 12px);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin: var(--spacing16, 16px) 0;
+}
+
+.payment-status-box__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #856404;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: payment-spin 0.8s linear infinite;
+}
+
+@keyframes payment-spin {
+  to { transform: rotate(360deg); }
+}
+
+.dev-simulate-form {
+  margin-top: var(--spacing12, 12px);
+  padding-top: var(--spacing12, 12px);
+  border-top: 1px dashed var(--border-lines-color, #dadada);
+}
+/* ============================================================
+   PHƯƠNG THỨC THANH TOÁN — dạng radio card thay cho <select>
+   ============================================================ */
+
+.payment-method-list {
+  border: 1px solid var(--border-lines-color, #dadada);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.payment-method-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing12, 12px);
+  padding: var(--spacing12, 12px) var(--spacing16, 16px);
+  border-bottom: 1px solid var(--border-lines-color, #dadada);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  transition: background-color 0.15s ease;
+}
+
+.payment-method-option:last-child {
+  border-bottom: none;
+}
+
+.payment-method-option:hover {
+  background-color: #f5f5f5;
+}
+
+.payment-method-option input[type="radio"] {
+  margin: 0;
+  accent-color: #1a7f4a;
+}
+
+.payment-method-option__label {
+  flex: 1;
+}
+
+.payment-method-option__icon {
+  font-size: 1.25rem;
+}
+
+/* ============================================================
+   FORM 2 CỘT — dùng trong modal thêm/sửa địa chỉ
+   ============================================================ */
+
+.form-row--2col {
+  display: flex;
+  gap: var(--spacing16, 16px);
+}
+
+.form-row--2col .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+  .form-row--2col {
+    flex-direction: column;
+    gap: var(--spacing16, 16px);
+  }
+}

@@ -7,15 +7,31 @@
     <title>@yield('title', 'UNIQLO Men - Đồ án')</title>
 
     <link rel="stylesheet" href="{{ asset('css/uniqlo-full-combined.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/site.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/cart-checkout-orders.css') }}">
 </head>
 <body>
 
     <header class="site-header">
         <a href="{{ route('home') }}" class="site-header__logo">UNIQLO</a>
         <nav class="site-header__nav">
+            <a href="{{ route('products.index') }}">Sản phẩm</a>
+            <a href="{{ route('categories.index') }}">Danh mục</a>
+            <a href="{{ route('cart.index') }}" class="cart-link">
+                Giỏ hàng
+                @if (($cartCount ?? 0) > 0)
+                    <span class="cart-badge">{{ $cartCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('vouchers.index') }}">Mã giảm giá</a>
+            @auth
+             <a href="{{ route('orders.index') }}">Đơn hàng của tôi</a>
+            @endauth
             @auth
                 <a href="{{ route('addresses.index') }}">Sổ địa chỉ</a>
+                @if (auth()->user()->isAdmin())
+                <a href="{{ route('admin.vouchers.index') }}">Quản lý Voucher</a>
+                @endif
                 <a href="{{ route('profile.edit') }}">Xin chào, {{ auth()->user()->name }}</a>
                 <form method="POST" action="{{ route('logout') }}" style="display:inline">
                     @csrf
@@ -32,9 +48,12 @@
         @if (session('success'))
             <div class="alert alert--success">{{ session('success') }}</div>
         @endif
-
+        @if (session('error'))
+            <div class="alert alert--error">{{ session('error') }}</div>
+        @endif
         @yield('content')
     </main>
 
+    @stack('scripts')
 </body>
 </html>

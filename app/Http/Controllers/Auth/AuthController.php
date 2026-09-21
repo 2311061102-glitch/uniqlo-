@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -43,6 +44,9 @@ class AuthController extends Controller
         // Đăng ký xong thì đăng nhập luôn cho tiện, không bắt user đăng nhập lại
         Auth::login($user);
 
+        // Gộp giỏ hàng khách vãng lai (nếu có, lưu qua Cookie) vào tài khoản vừa tạo
+        CartService::mergeGuestCartIntoUser($user);
+
         return redirect()->route('home')->with('success', 'Đăng ký tài khoản thành công!');
     }
 
@@ -73,6 +77,9 @@ class AuthController extends Controller
 
         // Chống session fixation attack: tạo session mới sau khi đăng nhập thành công
         $request->session()->regenerate();
+
+        // Gộp giỏ hàng khách vãng lai (nếu có, lưu qua Cookie) vào tài khoản vừa đăng nhập
+        CartService::mergeGuestCartIntoUser(Auth::user());
 
         return redirect()->intended(route('home'));
     }
