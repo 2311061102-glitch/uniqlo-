@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 use App\Services\CartService;
 
 class GoogleController extends Controller
@@ -23,7 +24,14 @@ class GoogleController extends Controller
 
     public function callback()
     {
-        $googleUser = Socialite::driver('google')->user();
+        try {
+            $googleUser = Socialite::driver('google')->user();
+        } catch (InvalidStateException) {
+            // Một số trình duyệt chặn/đổi cookie session khi quay về từ Google.
+            // Thử lấy user không state để tránh màn hình 500; callback URL vẫn phải
+            // khớp GOOGLE_REDIRECT_URI trong Google Cloud Console.
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        }
         $user = User::where('google_id', $googleUser->getId())
             ->orWhere('email', $googleUser->getEmail())
             ->first();

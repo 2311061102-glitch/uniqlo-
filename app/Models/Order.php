@@ -22,6 +22,7 @@ class Order extends Model
             'shipping_fee' => 'integer',
             'discount_amount' => 'integer',
             'total_amount' => 'integer',
+            'qr_expires_at' => 'datetime',
         ];
     }
 
@@ -73,14 +74,9 @@ class Order extends Model
         return $this->hasOne(Payment::class);
     }
 
-    public function payment()
-    {
-        return $this->hasOne(Payment::class);
-    }
-
     public function scopePending($query)
     {
-        return in_array($this->order_status, self::CANCELLABLE_STATUSES);
+        return $query->where('order_status', 'pending');
     }
 
     /**
@@ -92,12 +88,5 @@ class Order extends Model
         return implode(', ', array_filter([
             $this->address_detail, $this->ward, $this->district, $this->province,
         ]));
-    }
-    
-    protected function casts(): array
-    {
-        return [
-            'qr_expires_at' => 'datetime',
-        ];
     }
 }
