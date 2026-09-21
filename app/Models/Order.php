@@ -3,43 +3,33 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Order extends Model
 {
     protected $fillable = [
-        'user_id', 'order_code',
-        'recipient_name', 'phone', 'province', 'district', 'ward', 'address_detail',
-        'subtotal', 'shipping_fee', 'discount_amount', 'total_amount',
-        'payment_method', 'payment_status', 'order_status', 'note',
+        'order_code', 'user_id', 'voucher_id', 'address_id',
+        'recipient_name', 'recipient_phone', 'province', 'district', 'ward', 'address_detail',
+        'subtotal_amount', 'shipping_fee', 'discount_amount', 'total_amount',
+        'payment_method', 'payment_status', 'order_status',
+        'qr_expires_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'subtotal' => 'integer',
-            'shipping_fee' => 'integer',
-            'discount_amount' => 'integer',
-            'total_amount' => 'integer',
-        ];
-    }
-
-    /**
-     * Tự sinh mã đơn hàng dạng "DH" + ngày tháng năm + 4 ký tự ngẫu nhiên,
-     * VD: DH202608240 7F3A — dễ đọc hơn nhiều so với chỉ hiện ID số (VD "Đơn #4").
-     */
-    protected static function booted(): void
-    {
-        static::creating(function (Order $order) {
-            if (empty($order->order_code)) {
-                $order->order_code = 'DH'.now()->format('Ymd').strtoupper(Str::random(4));
-            }
-        });
-    }
+    const STATUSES = ['pending', 'processing', 'shipping', 'completed', 'cancelled'];
+    const CANCELLABLE_STATUSES = ['pending'];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function voucher()
+    {
+        return $this->belongsTo(Voucher::class);
+    }
+
+    public function address()
+    {
+        return $this->belongsTo(Address::class);
     }
 
     public function items()
@@ -47,13 +37,31 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function payments()
+    public function payment()
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasOne(Payment::class);
     }
 
-    public function scopePending($query)
+    public function canBeCancelled(): bool
     {
-        return $query->where('order_status', 'pending');
+        return in_array($this->order_status, self::CANCELLABLE_STATUSES);
+    }
+
+    /**
+     * Ghép địa chỉ đầy đủ thành 1 dòng để hiển thị, VD:
+     * "12 Nguyễn Trãi, Phường 5, Quận 1, TP.HCM"
+     */
+    public function fullAddress(): string
+    {
+        return implode(', ', array_filter([
+            $this->address_detail, $this->ward, $this->district, $this->province,
+        ]));
+    }
+    
+    protected function casts(): array
+    {
+        return [
+            'qr_expires_at' => 'datetime',
+        ];
     }
 }

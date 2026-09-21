@@ -43,7 +43,17 @@ class AddressController extends Controller
             $user->addresses()->update(['is_default' => false]);
         }
 
-        $user->addresses()->create($validated);
+        $address = $user->addresses()->create($validated);
+
+        // Popup "Thêm địa chỉ mới" trong Checkout gọi route này qua fetch() (AJAX),
+        // nên trả JSON thay vì redirect để không bị chuyển trang mất ngữ cảnh checkout.
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Thêm địa chỉ thành công!',
+                'address' => $address,
+            ]);
+        }
 
         return redirect()->route('addresses.index')->with('success', 'Thêm địa chỉ thành công!');
     }
@@ -68,6 +78,14 @@ class AddressController extends Controller
         }
 
         $address->update($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật địa chỉ thành công!',
+                'address' => $address,
+            ]);
+        }
 
         return redirect()->route('addresses.index')->with('success', 'Cập nhật địa chỉ thành công!');
     }

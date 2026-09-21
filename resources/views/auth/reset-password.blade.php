@@ -20,20 +20,14 @@
 
             <div class="form-group">
                 <label for="password">Mật khẩu mới</label>
-                <div class="password-field">
-                    <input type="password" id="password" name="password" class="form-input" required autofocus>
-                    <button type="button" class="password-toggle" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">&#128065;</button>
-                </div>
-                @include('auth._password-rules')
+                <input type="password" id="password" name="password" class="form-input" required autofocus>
+                <p class="form-hint">Ít nhất 8 ký tự, có chữ hoa, chữ thường và số.</p>
             </div>
 
             <div class="form-group">
                 <label for="password_confirmation">Nhập lại mật khẩu mới</label>
-                  <div class="password-field">
-                      <input type="password" id="password_confirmation" name="password_confirmation"
-                          class="form-input" required>
-                      <button type="button" class="password-toggle" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">&#128065;</button>
-                  </div>
+                <input type="password" id="password_confirmation" name="password_confirmation"
+                       class="form-input" required>
             </div>
 
             <button type="submit" class="btn-primary">Đặt lại mật khẩu</button>

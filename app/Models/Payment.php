@@ -7,17 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $fillable = [
-        'order_id', 'method', 'amount', 'status',
-        'gateway_transaction_id', 'gateway_response', 'paid_at',
+        'order_id', 'payment_method', 'amount', 'status', 'transaction_code',
+        'gateway_transaction_id', 'raw_webhook_payload', 'paid_at',
     ];
 
     protected function casts(): array
     {
-        return [
-            'amount' => 'integer',
-            'gateway_response' => 'array', // Laravel tự động encode/decode JSON <-> mảng PHP
-            'paid_at' => 'datetime',
-        ];
+        return ['paid_at' => 'datetime'];
     }
 
     public function order()

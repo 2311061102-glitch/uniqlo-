@@ -9,16 +9,27 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    /**
+     * GET /san-pham — danh sách tất cả sản phẩm, có thể kèm query string:
+     * ?category=ao-thun&size=M&color=Đen&min_price=100000&max_price=500000
+     * &material=cotton&sort=price_asc&q=basic
+     */
     public function index(Request $request)
     {
         return $this->renderList($request);
     }
 
+    /**
+     * GET /danh-muc/{category:slug} — danh sách sản phẩm theo 1 danh mục cụ thể.
+     */
     public function byCategory(Request $request, Category $category)
     {
         return $this->renderList($request, $category);
     }
 
+    /**
+     * Hàm dùng chung cho cả 2 route ở trên, tránh viết trùng code lọc/sắp xếp 2 lần.
+     */
     private function renderList(Request $request, ?Category $category = null)
     {
         $query = Product::query()->active()->with(['images', 'variants', 'reviews']);
@@ -71,20 +82,26 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * GET /san-pham/{product:slug} — trang chi tiết 1 sản phẩm.
+     * "{product:slug}" nghĩa là Laravel tự tìm Product theo cột slug (không phải id) trên URL.
+     */
     public function show(Product $product)
     {
         $product->load(['images', 'variants', 'category', 'reviews.user']);
 
+        // Danh sách size/màu DUY NHẤT của sản phẩm này (dùng để hiện nút chọn ngoài giao diện)
         $sizes = $product->variants->pluck('size')->unique()->values();
         $colors = $product->variants->unique('color')->values();
-        
-        $userReview = auth()->check()
-        ? $product->reviews->firstWhere('user_id', auth()->id())
-        : null;
 
-        return view('products.show', compact('product', 'sizes', 'colors', 'userReview'));
+        return view('products.show', compact('product', 'sizes', 'colors'));
     }
 
+    /**
+     * GET /san-pham/{product:slug}/kiem-tra-ton-kho?size=M&color=Đen
+     * Trả về JSON — được gọi bằng JavaScript (fetch) từ trang chi tiết sản phẩm
+     * mỗi khi khách chọn xong CẢ size và màu, để kiểm tra tồn kho mà KHÔNG cần tải lại trang.
+     */
     public function checkStock(Request $request, Product $product)
     {
         $request->validate([
