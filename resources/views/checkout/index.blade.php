@@ -3,7 +3,7 @@
 @section('title', 'Thanh toán')
 
 @section('content')
-<h1 class="page-title">Thanh toán</h1>
+    <h1 class="page-title">Thông tin thanh toán</h1>
 
 <div class="checkout-voucher-box">
     <div class="checkout-voucher-box__heading">
@@ -78,7 +78,67 @@
                             <small class="checkout-option__meta">Chưa ghim vị trí — phí tạm tính theo khu vực</small>
                         @endif
                     </span>
-                </label>
+                    <span class="address-summary__arrow">›</span>
+                </button>
+            </div>
+
+            {{-- Giá trị thật gửi kèm đơn hàng, luôn đồng bộ với lựa chọn ở trên --}}
+            <input type="hidden" name="address_id" value="{{ $selectedAddressId }}">
+
+            <div class="form-group">
+                <label for="shipping_region">Khu vực giao hàng</label>
+                <select name="shipping_region" id="shipping_region" form="region-form" onchange="this.form.submit()">
+                    @foreach ($regionOptions as $value => $label)
+                        <option value="{{ $value }}" {{ $selectedRegion == $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <p class="form-hint">Đơn từ 500.000₫ được miễn phí vận chuyển.</p>
+                {{-- Giá trị thật gửi kèm đơn hàng, luôn đồng bộ với lựa chọn ở trên --}}
+                <input type="hidden" name="shipping_region" value="{{ $selectedRegion }}">
+            </div>
+
+            <div class="form-group">
+    <label>Phương thức thanh toán</label>
+    <div class="payment-method-list">
+        <label class="payment-method-option">
+            <input type="radio" name="payment_method" value="cod" checked>
+            <span class="payment-method-option__label">Thanh toán khi nhận hàng</span>
+            <span class="payment-method-option__icon">💵</span>
+        </label>
+        <label class="payment-method-option">
+            <input type="radio" name="payment_method" value="bank_transfer">
+            <span class="payment-method-option__label">Chuyển khoản ngân hàng</span>
+            <span class="payment-method-option__icon">🏦</span>
+        </label>
+        <label class="payment-method-option">
+            <input type="radio" name="payment_method" value="qr">
+            <span class="payment-method-option__label">Thanh toán bằng QR</span>
+            <span class="payment-method-option__icon">📱</span>
+        </label>
+    </div>
+    </div>
+
+            <button type="submit" class="btn-primary">Đặt hàng</button>
+        </form>
+
+        {{-- Form ẩn riêng để đổi khu vực giao hàng, chỉ tính lại phí ship, chưa đặt hàng thật --}}
+        <form id="region-form" action="{{ route('checkout.region') }}" method="POST" style="display:none;">
+            @csrf
+        </form>
+
+        {{-- Form ẩn riêng để đổi địa chỉ đang chọn, lưu tạm vào session --}}
+        <form id="address-form" action="{{ route('checkout.address') }}" method="POST" style="display:none;">
+            @csrf
+        </form>
+
+        <div class="checkout-summary">
+            <h2>Đơn hàng của bạn</h2>
+
+            @foreach ($selectedItems as $item)
+                <div class="checkout-summary__item">
+                    <span>{{ $item->variant->product->name }} ({{ $item->variant->size }} - {{ $item->variant->color }}) x{{ $item->quantity }}</span>
+                    <span>{{ number_format($item->variant->final_price * $item->quantity, 0, ',', '.') }}₫</span>
+                </div>
             @endforeach
             <a href="{{ route('addresses.create') }}" class="auth-link">+ Thêm địa chỉ mới</a>
         </div>

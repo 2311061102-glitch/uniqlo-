@@ -15,17 +15,14 @@
             @csrf
 
             <div class="form-group">
-                <label for="email">Email hoặc số điện thoại</label>
-                <input type="text" id="email" name="email" value="{{ old('email') }}"
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ old('email') }}"
                        class="form-input" required autofocus>
             </div>
 
             <div class="form-group">
                 <label for="password">Mật khẩu</label>
-                <div class="password-field">
-                    <input type="password" id="password" name="password" class="form-input" required>
-                    <button type="button" class="password-toggle" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">&#128065;</button>
-                </div>
+                <input type="password" id="password" name="password" class="form-input" required>
             </div>
 
             <div class="form-group form-group--inline">

@@ -12,18 +12,20 @@ class CheckoutController extends Controller
 {
     public function index(Request $request)
     {
-        $user = $request->user();
+        $cart = Cart::with('items.variant.product')->firstOrCreate(['user_id' => auth()->id()]);
 
         $cartItems = CartService::userCart($user)->items()->with('variant.product')->get();
 
-        if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Giỏ hàng đang trống, không thể thanh toán.');
+        if (! $selectedItems) {
+            return redirect()->route('cart.index')->with('error', 'Vui lòng chọn sản phẩm cần thanh toán từ giỏ hàng.');
         }
 
-        $addresses = $user->addresses()->orderByDesc('is_default')->get();
+        $addresses = auth()->user()->addresses;
 
         if ($addresses->isEmpty()) {
-            return redirect()->route('addresses.create')->with('error', 'Vui lòng thêm địa chỉ giao hàng trước khi thanh toán.');
+            return redirect()
+                ->route('addresses.create')
+                ->with('error', 'Bạn cần thêm ít nhất 1 địa chỉ nhận hàng trước khi thanh toán.');
         }
 
         $subtotal = $cartItems->sum(fn ($item) => $item->subtotal);
@@ -105,37 +107,99 @@ class CheckoutController extends Controller
             ->values();
     }
 
-    public function store(Request $request)
+    public function applyVoucher(Request $request)
     {
-        $user = $request->user();
+        $request->validate(['voucher_code' => 'required|string']);
 
-        $validated = $request->validate([
-            'address_id' => ['required', 'exists:addresses,id'],
-            'payment_method' => ['required', 'in:cod,vietqr,vnpay'],
-            'note' => ['nullable', 'string', 'max:500'],
-        ]);
+        $cart = Cart::with('items.variant')->firstOrCreate(['user_id' => auth()->id()]);
+        $selectedItems = $this->resolveSelectedItems($cart);
 
-        if (! in_array($validated['payment_method'], ['cod', 'vietqr', 'vnpay'])) {
-            return back()->with('error', 'Phương thức thanh toán này chưa khả dụng.');
+        if (! $selectedItems) {
+            return redirect()->route('cart.index')->with('error', 'Vui lòng chọn sản phẩm cần thanh toán từ giỏ hàng.');
         }
 
-        $address = $user->addresses()->findOrFail($validated['address_id']);
+        $subtotal = $selectedItems->sum(fn ($item) => $item->variant->final_price * $item->quantity);
+
+        $voucher = Voucher::where('code', $request->voucher_code)->first();
+
+        if (!$voucher) {
+            return redirect()->route('checkout.index')->with('error', 'Mã giảm giá không tồn tại.');
+        }
+
+        $check = $voucher->checkValidity($subtotal);
+        if (!$check['valid']) {
+            return redirect()->route('checkout.index')->with('error', $check['message']);
+        }
+
+        session(['checkout.voucher_id' => $voucher->id]);
+
+        return redirect()->route('checkout.index')->with('success', 'Áp dụng mã giảm giá thành công.');
+    }
+
+    public function removeVoucher()
+    {
+        session()->forget('checkout.voucher_id');
+        return redirect()->route('checkout.index')->with('success', 'Đã gỡ mã giảm giá.');
+    }
+
+    public function updateRegion(Request $request)
+    {
+        $request->validate(['shipping_region' => 'required|in:inner_city,outer_city,other']);
+        session(['checkout.region' => $request->shipping_region]);
+        return redirect()->route('checkout.index');
+    }
+
+    public function updateAddress(Request $request)
+    {
+        $request->validate(['address_id' => 'required|exists:addresses,id']);
+
+        $address = Address::findOrFail($request->address_id);
+        abort_unless($address->user_id === auth()->id(), 403);
+
+        session(['checkout.address_id' => $address->id]);
+        return redirect()->route('checkout.index');
+    }
+
+    /**
+     * Xử lý đặt hàng: tạo Order + OrderItem + Payment, trừ tồn kho biến thể,
+     * xóa ĐÚNG các dòng đã chọn khỏi giỏ hàng (giữ lại phần chưa chọn).
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'address_id'        => 'required|exists:addresses,id',
+            'shipping_region'   => 'required|in:inner_city,outer_city,other',
+            'payment_method'    => 'required|in:cod,bank_transfer,qr',
+        ]);
+
+        $address = Address::findOrFail($request->address_id);
+        abort_unless($address->user_id === auth()->id(), 403, 'Địa chỉ không hợp lệ.');
+
+        $cart = Cart::with('items.variant.product')->firstOrCreate(['user_id' => auth()->id()]);
+
+        $selectedItems = $this->resolveSelectedItems($cart);
+
+        if (! $selectedItems) {
+            return redirect()->route('cart.index')->with('error', 'Vui lòng chọn sản phẩm cần thanh toán từ giỏ hàng.');
+        }
+
+        try {
+            $order = DB::transaction(function () use ($request, $selectedItems, $address) {
 
         $cart = CartService::userCart($user);
         $cartItems = $cart->items()->with('variant.product')->get();
 
-        if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Giỏ hàng đang trống.');
-        }
+                    if (!$variant) {
+                        throw new \Exception('Một sản phẩm trong giỏ hàng không còn tồn tại.');
+                    }
+                    if ($item->quantity > $variant->stock_quantity) {
+                        throw new \Exception(
+                            'Sản phẩm "' . $variant->product->name . '" (' . $variant->size . ' - ' . $variant->color . ') không đủ tồn kho.'
+                        );
+                    }
 
-        foreach ($cartItems as $item) {
-            if ($item->quantity > $item->variant->stock_quantity) {
-                return redirect()->route('cart.index')->with(
-                    'error',
-                    "Sản phẩm \"{$item->variant->product->name}\" (size {$item->variant->size}, {$item->variant->color}) không đủ tồn kho."
-                );
-            }
-        }
+                    $lockedVariants[$item->id] = $variant;
+                }
 
         $subtotal = $cartItems->sum(fn ($item) => $item->subtotal);
         $voucher = $this->sessionVoucher($subtotal);
@@ -171,9 +235,9 @@ class CheckoutController extends Controller
                     'subtotal' => $item->subtotal,
                 ]);
 
-                $item->variant->decrement('stock_quantity', $item->quantity);
-                $item->variant->product->increment('sold_count', $item->quantity);
-            }
+                // 4. Tạo OrderItem + trừ tồn kho — CHỈ với các biến thể ĐÃ CHỌN
+                foreach ($selectedItems as $item) {
+                    $variant = $lockedVariants[$item->id];
 
             $order->payments()->create([
                 'payment_method' => $validated['payment_method'],
@@ -187,17 +251,73 @@ class CheckoutController extends Controller
 
             $cart->items()->delete();
 
-            return $order;
+        return redirect()->route('checkout.success', $order)->with('success', 'Thanh toán đã được ghi nhận.');
+    }
+
+    public function success(Order $order)
+    {
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        return view('checkout.success', compact('order'));
+    }
+
+    public function checkPaymentStatus(Order $order)
+    {
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        $this->cancelIfExpired($order);
+
+        return response()->json([
+            'payment_status' => $order->payment_status,
+            'expired'        => $order->order_status === 'cancelled' && $order->payment_status !== 'paid',
+        ]);
+    }
+
+    /**
+     * Nếu đơn QR/Chuyển khoản đã quá 10 phút mà vẫn chưa thanh toán -> tự động
+     * hủy đơn và hoàn lại tồn kho đã trừ lúc đặt hàng.
+     */
+    private function cancelIfExpired(Order $order): void
+    {
+        $isExpired = $order->qr_expires_at
+            && now()->gt($order->qr_expires_at)
+            && $order->payment_status === 'unpaid'
+            && $order->order_status !== 'cancelled';
+
+        if (! $isExpired) {
+            return;
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->load('items.variant');
+
+            foreach ($order->items as $item) {
+                if ($item->variant) {
+                    $item->variant->increment('stock_quantity', $item->quantity);
+                }
+            }
+
+            $order->update(['order_status' => 'cancelled']);
         });
 
-        if ($order->payment_method === 'vietqr') {
-            return redirect()->route('payments.vietqr', $order);
+        $order->refresh();
+    }
+
+    /**
+     * Lấy ra đúng các dòng giỏ hàng mà khách đã TICK CHỌN ở trang /gio-hang
+     * (lưu tạm trong session bởi CartController::selectForCheckout()).
+     * Trả về null nếu chưa chọn gì / chọn item không còn tồn tại trong giỏ nữa.
+     */
+    private function resolveSelectedItems(Cart $cart)
+    {
+        $selectedIds = session('checkout.selected_item_ids', []);
+
+        if (empty($selectedIds)) {
+            return null;
         }
 
-        if ($order->payment_method === 'vnpay') {
-            return redirect()->route('payments.vnpay.pay', $order);
-        }
+        $items = $cart->items->whereIn('id', $selectedIds);
 
-        return redirect()->route('orders.show', $order)->with('success', 'Đặt hàng thành công!');
+        return $items->isEmpty() ? null : $items;
     }
 }

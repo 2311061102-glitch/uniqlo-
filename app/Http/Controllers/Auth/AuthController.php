@@ -6,92 +6,90 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Services\CartService;
 
 class AuthController extends Controller
 {
+    /**
+     * Hiện form đăng ký.
+     */
     public function showRegisterForm()
     {
         return view('auth.register');
     }
 
+    /**
+     * Xử lý dữ liệu đăng ký được gửi lên.
+     * RegisterRequest $request: Laravel tự validate trước khi vào hàm này,
+     * nên trong này không cần viết lại if/else kiểm tra dữ liệu nữa.
+     */
     public function register(RegisterRequest $request)
     {
         $validated = $request->validated();
 
+        // Mọi tài khoản tự đăng ký đều mặc định là "customer" (khách hàng)
         $customerRole = Role::where('name', 'customer')->first();
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
-            'password' => $validated['password'],
+            'password' => $validated['password'], // Model User đã cast 'hashed' -> tự động bcrypt, không cần Hash::make() thủ công
             'role_id' => $customerRole?->id,
         ]);
 
+        // Đăng ký xong thì đăng nhập luôn cho tiện, không bắt user đăng nhập lại
         Auth::login($user);
         CartService::mergeGuestCartIntoUser($user);
 
-        // Gửi email xác thực ngay sau khi tạo tài khoản. Đây là hàm có sẵn của Laravel
-        // (đến từ trait MustVerifyEmail gắn ở Model User) — tự soạn email, tự sinh link
-        // xác thực có chữ ký bảo mật (signed URL), không cần tự viết logic gửi mail.
-        $user->sendEmailVerificationNotification();
+        // Gộp giỏ hàng khách vãng lai (nếu có, lưu qua Cookie) vào tài khoản vừa tạo
+        CartService::mergeGuestCartIntoUser($user);
 
-        return redirect()->route('home')->with('success', 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.');
+        return redirect()->route('home')->with('success', 'Đăng ký tài khoản thành công!');
     }
 
+    /**
+     * Hiện form đăng nhập.
+     */
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
+    /**
+     * Xử lý đăng nhập.
+     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'string'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        $user = User::where('email', $credentials['email'])
-            ->orWhere('phone', $credentials['email'])
-            ->first();
-
-        $loginCredentials = [
-            'email' => $user?->email ?? $credentials['email'],
-            'password' => $credentials['password'],
-        ];
-
-        $throttleKey = Str::lower($credentials['email']).'|'.$request->ip();
-
-        if (RateLimiter::tooManyAttempts($throttleKey, maxAttempts: 5)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-
+        // Auth::attempt tự động so sánh password đã hash trong DB, trả về true/false
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
-                'email' => "Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau {$seconds} giây.",
+                'email' => 'Email hoặc mật khẩu không đúng.',
             ]);
         }
 
-        if (! Auth::attempt($loginCredentials, $request->boolean('remember'))) {
-            RateLimiter::hit($throttleKey, decaySeconds: 60);
-
-            throw ValidationException::withMessages([
-                'email' => 'Email/số điện thoại hoặc mật khẩu không đúng.',
-            ]);
-        }
-
-        RateLimiter::clear($throttleKey);
-
+        // Chống session fixation attack: tạo session mới sau khi đăng nhập thành công
         $request->session()->regenerate();
         CartService::mergeGuestCartIntoUser($request->user());
+
+        // Gộp giỏ hàng khách vãng lai (nếu có, lưu qua Cookie) vào tài khoản vừa đăng nhập
+        CartService::mergeGuestCartIntoUser(Auth::user());
 
         return redirect()->intended(route('home'));
     }
 
+    /**
+     * Xử lý đăng xuất.
+     */
     public function logout(Request $request)
     {
         Auth::logout();

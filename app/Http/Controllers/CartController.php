@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Services\CartService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
@@ -20,9 +23,8 @@ class CartController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'product_variant_id' => ['required', 'exists:product_variants,id'],
-            'quantity' => ['nullable', 'integer', 'min:1'],
+        $request->validate([
+            'quantity' => 'nullable|integer|min:1',
         ]);
 
         return $this->addVariant($request, ProductVariant::findOrFail($validated['product_variant_id']), $validated['quantity'] ?? 1);
@@ -62,7 +64,7 @@ class CartController extends Controller
         abort_if($quantity > $cartItem->variant->stock_quantity, 422, 'Số lượng vượt quá tồn kho hiện có.');
         $cartItem->update(['quantity' => $quantity]);
 
-        return back()->with('success', 'Đã cập nhật số lượng.');
+        return redirect()->route('cart.index')->with('success', 'Đã cập nhật giỏ hàng.');
     }
 
     public function destroy(Request $request, CartItem $cartItem)
@@ -70,7 +72,7 @@ class CartController extends Controller
         $this->authorizeOwner($request, $cartItem);
         $cartItem->delete();
 
-        return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng.');
+        return redirect()->route('cart.index')->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng.');
     }
 
     public function clear(Request $request)
@@ -84,5 +86,50 @@ class CartController extends Controller
     {
         $cart = CartService::currentCart($request, false);
         abort_unless($cart && $cartItem->cart_id === $cart->id, 403, 'Bạn không có quyền thao tác với giỏ hàng này.');
+    }
+
+    private function authorizeItem(CartItem $item, Request $request): void
+    {
+        $cart = $item->cart;
+
+        if (auth()->check()) {
+            abort_unless($cart->user_id === auth()->id(), 403, 'Bạn không có quyền thao tác với giỏ hàng này.');
+            return;
+        }
+
+        $guestToken = $request->cookie(CartService::GUEST_COOKIE_NAME);
+        abort_unless($guestToken && $cart->guest_token === $guestToken, 403, 'Bạn không có quyền thao tác với giỏ hàng này.');
+    }
+    /**
+     * Xử lý khi khách tick chọn 1 vài sản phẩm trong giỏ hàng rồi bấm
+     * "Tiến hành thanh toán" — lưu lại danh sách ID đã chọn vào session,
+     * để CheckoutController chỉ tính tiền/tạo đơn theo ĐÚNG các sản phẩm đó,
+     * không phải toàn bộ giỏ hàng.
+     */
+    public function selectForCheckout(Request $request)
+    {
+        $request->validate([
+            'selected_items'   => 'required|array|min:1',
+            'selected_items.*' => 'integer',
+        ], [
+            'selected_items.required' => 'Vui lòng chọn ít nhất 1 sản phẩm để thanh toán.',
+        ]);
+ 
+        $cart = $this->getOrCreateCart($request);
+ 
+        // BẢO MẬT: chỉ chấp nhận những cart_item_id THẬT SỰ thuộc giỏ hàng
+        // của chính khách đang thao tác, phòng trường hợp tự sửa ID trên form.
+        $validIds = $cart->items()
+            ->whereIn('id', $request->selected_items)
+            ->pluck('id')
+            ->toArray();
+ 
+        if (empty($validIds)) {
+            return redirect()->route('cart.index')->with('error', 'Vui lòng chọn ít nhất 1 sản phẩm để thanh toán.');
+        }
+ 
+        session(['checkout.selected_item_ids' => $validIds]);
+ 
+        return redirect()->route('checkout.index');
     }
 }

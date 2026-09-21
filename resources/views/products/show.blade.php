@@ -12,13 +12,13 @@
 <div class="product-detail">
     <div class="product-gallery">
         <img id="main-image"
-             src="{{ $product->primary_image?->url ?? '' }}"
+             src="{{ $product->primary_image ? asset('storage/'.$product->primary_image->image_path) : '' }}"
              alt="{{ $product->name }}" class="product-gallery__main">
 
         @if ($product->images->count() > 1)
             <div class="product-gallery__thumbs">
                 @foreach ($product->images as $image)
-                    <img src="{{ $image->url }}" alt="{{ $product->name }}"
+                    <img src="{{ asset('storage/'.$image->image_path) }}" alt="{{ $product->name }}"
                          class="product-gallery__thumb"
                          onclick="document.getElementById('main-image').src = this.src">
                 @endforeach
@@ -50,36 +50,28 @@
             <div class="variant-selector__options" id="color-options">
                 @foreach ($colors as $variant)
                     <button type="button" class="color-swatch" data-color="{{ $variant->color }}"
-                            style="background: {{ $variant->color_hex ?? '#ccc' }}" title="{{ $variant->color }}"></button>
+                            style="background: {{ $variant->color_hex ?? '#ccc' }}" title="{{ $variant->color }}">
+                    </button>
                 @endforeach
             </div>
         </div>
 
         <div id="stock-status" class="stock-status">Vui lòng chọn size và màu.</div>
 
-        {{-- Form thêm vào giỏ — chỉ submit được khi đã chọn đủ size+màu VÀ còn hàng --}}
-        <form method="POST" action="{{ route('cart.store') }}" id="add-to-cart-form">
-            @csrf
-            <input type="hidden" name="product_variant_id" id="selected-variant-id" value="">
+        <div class="product-actions">
+            {{-- Nút yêu thích sẽ hoạt động thật ở Giai đoạn 5 --}}
+            <button type="button" id="wishlist-btn" class="btn-secondary" title="Sẽ hoạt động ở Giai đoạn 5">
+                ♡ Yêu thích
+            </button>
 
-            <div class="product-actions">
-                @auth
-                    @if ($isWishlisted ?? false)
-                        <button type="button" class="btn-secondary btn-secondary--active" title="Chức năng wishlist ở Giai đoạn 5 Thành viên 2">♥</button>
-                    @else
-                        <button type="button" class="btn-secondary" title="Chức năng wishlist ở Giai đoạn 5 Thành viên 2">♡</button>
-                    @endif
-                @else
-                    <a href="{{ route('login') }}" class="btn-secondary">♡</a>
-                @endauth
-
-                <input type="number" name="quantity" id="cart-quantity" value="1" min="1" class="quantity-input">
-
-                <button type="submit" id="add-to-cart-btn" class="btn-primary" disabled>
-                    Thêm vào giỏ hàng
+            {{-- Phần Thành viên 3: chọn số lượng + thêm vào giỏ hàng --}}
+            <div class="add-to-cart-row">
+                <input type="number" id="quantity-input" value="1" min="1" class="quantity-input">
+                <button type="button" id="add-to-cart-btn" class="btn-primary" disabled>
+                    Thêm vào giỏ
                 </button>
             </div>
-        </form>
+        </div>
 
         <div class="product-description">
             <h2>Mô tả sản phẩm</h2>
@@ -108,50 +100,12 @@
 <div class="product-reviews">
     <h2>Đánh giá sản phẩm ({{ $product->reviews->count() }})</h2>
 
-    @auth
-        <form method="POST" action="{{ route('reviews.store', $product) }}" class="review-form">
-            @csrf
-            <div class="star-rating">
-                @for ($i = 5; $i >= 1; $i--)
-                    <input type="radio" id="star{{ $i }}" name="rating" value="{{ $i }}"
-                           {{ old('rating', $userReview->rating ?? null) == $i ? 'checked' : '' }}>
-                    <label for="star{{ $i }}">★</label>
-                @endfor
-            </div>
-            @error('rating')
-                <p class="form-error">{{ $message }}</p>
-            @enderror
-
-            <textarea name="comment" rows="3" class="form-input" placeholder="Nhận xét của bạn về sản phẩm (không bắt buộc)...">{{ old('comment', $userReview->comment ?? '') }}</textarea>
-            @error('comment')
-                <p class="form-error">{{ $message }}</p>
-            @enderror
-
-            <button type="submit" class="btn-primary btn-primary--inline">
-                {{ $userReview ? 'Cập nhật đánh giá' : 'Gửi đánh giá' }}
-            </button>
-        </form>
-    @else
-        <p class="form-hint">
-            <a href="{{ route('login') }}">Đăng nhập</a> để viết đánh giá cho sản phẩm này.
-        </p>
-    @endauth
+    {{-- Form viết đánh giá sẽ làm ở Giai đoạn 4, hiện tại chỉ xem được, chưa viết được --}}
 
     @forelse ($product->reviews as $review)
         <div class="review-item">
             <p class="review-item__header">
                 <strong>{{ $review->user->name }}</strong> — {{ str_repeat('⭐', $review->rating) }}
-
-                @auth
-                    @if ($review->user_id === auth()->id())
-                        <form method="POST" action="{{ route('reviews.destroy', $review) }}"
-                              style="display:inline" onsubmit="return confirm('Xóa đánh giá của bạn?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="link-button link-button--danger">Xóa</button>
-                        </form>
-                    @endif
-                @endauth
             </p>
             @if ($review->comment)
                 <p class="review-item__comment">{{ $review->comment }}</p>
@@ -170,21 +124,24 @@
     const stockStatus = document.getElementById('stock-status');
     const priceEl = document.getElementById('product-price');
     const addToCartBtn = document.getElementById('add-to-cart-btn');
-    const selectedVariantInput = document.getElementById('selected-variant-id');
+    const quantityInput = document.getElementById('quantity-input');
 
     let selectedSize = null;
     let selectedColor = null;
+    let selectedVariantId = null;
 
     function formatPrice(number) {
         return new Intl.NumberFormat('vi-VN').format(number) + '₫';
     }
 
+    // Đây là hàm GỌI THẬT lên server (không phải xử lý trong JS) mỗi khi
+    // đã chọn đủ cả size và màu, để lấy đúng số lượng tồn kho hiện tại từ database.
     function checkStock() {
         if (!selectedSize || !selectedColor) {
             stockStatus.textContent = 'Vui lòng chọn size và màu.';
             stockStatus.className = 'stock-status';
             addToCartBtn.disabled = true;
-            selectedVariantInput.value = '';
+            selectedVariantId = null;
             return;
         }
 
@@ -199,7 +156,7 @@
                     stockStatus.textContent = 'Không có sẵn tổ hợp size + màu này.';
                     stockStatus.className = 'stock-status stock-status--out-of-stock';
                     addToCartBtn.disabled = true;
-                    selectedVariantInput.value = '';
+                    selectedVariantId = null;
                     return;
                 }
 
@@ -209,17 +166,23 @@
                     stockStatus.textContent = `Còn hàng (${data.stock_quantity} sản phẩm).`;
                     stockStatus.className = 'stock-status stock-status--in-stock';
                     addToCartBtn.disabled = false;
-                    // Lưu ID biến thể vào ô ẩn -> đây là giá trị THẬT được gửi đi khi bấm "Thêm vào giỏ"
-                    selectedVariantInput.value = data.variant_id;
+                    selectedVariantId = data.variant_id;
+
+                    // Không cho chọn số lượng vượt quá tồn kho hiện có
+                    quantityInput.max = data.stock_quantity;
+                    if (parseInt(quantityInput.value, 10) > data.stock_quantity) {
+                        quantityInput.value = data.stock_quantity;
+                    }
                 } else {
                     stockStatus.textContent = 'Hết hàng.';
                     stockStatus.className = 'stock-status stock-status--out-of-stock';
                     addToCartBtn.disabled = true;
-                    selectedVariantInput.value = '';
+                    selectedVariantId = null;
                 }
             })
             .catch(() => {
                 stockStatus.textContent = 'Có lỗi khi kiểm tra tồn kho, vui lòng thử lại.';
+                selectedVariantId = null;
             });
     }
 
@@ -239,6 +202,47 @@
             selectedColor = btn.dataset.color;
             checkStock();
         });
+    });
+
+    // ===== Phần Thành viên 3: xử lý bấm "Thêm vào giỏ" =====
+    addToCartBtn.addEventListener('click', () => {
+        if (!selectedVariantId) {
+            alert('Vui lòng chọn size và màu trước khi thêm vào giỏ.');
+            return;
+        }
+
+        const quantity = parseInt(quantityInput.value, 10) || 1;
+
+        addToCartBtn.disabled = true;
+        addToCartBtn.textContent = 'Đang thêm...';
+
+        fetch(`/gio-hang/them/${selectedVariantId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ quantity }),
+        })
+            .then(response => response.json().then(data => ({ status: response.status, data })))
+            .then(({ status, data }) => {
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = 'Thêm vào giỏ';
+
+                if (status !== 200 || !data.success) {
+                    alert(data.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+                    return;
+                }
+
+                alert('Đã thêm vào giỏ hàng!');
+                window.location.href = '{{ route("cart.index") }}';
+            })
+            .catch(() => {
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = 'Thêm vào giỏ';
+                alert('Có lỗi khi kết nối tới server, vui lòng thử lại.');
+            });
     });
 })();
 </script>

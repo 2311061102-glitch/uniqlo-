@@ -2,22 +2,22 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
-     * File này là "điểm vào" khi chạy: php artisan db:seed (hoặc migrate:fresh --seed)
-     * Liệt kê thứ tự gọi các seeder khác — PHẢI đúng thứ tự phụ thuộc:
-     * roles trước (vì users cần role_id), categories trước products
-     * (vì products cần category_id).
+     * Seed the application's database.
      */
     public function run(): void
     {
-        $this->call([
-            RoleSeeder::class,
-            CategorySeeder::class,
-            DemoProductSeeder::class,
+        // User::factory(10)->create();
+
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
         ]);
     }
 }

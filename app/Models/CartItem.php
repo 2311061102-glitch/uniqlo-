@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class CartItem extends Model
@@ -20,12 +19,15 @@ class CartItem extends Model
     }
 
     /**
-     * Thành tiền của riêng dòng này = đơn giá biến thể * số lượng.
+     * Truy cập nhanh sản phẩm cha từ 1 dòng giỏ hàng: $cartItem->product
      */
-    protected function subtotal(): Attribute
+    public function product()
     {
-        return Attribute::make(
-            get: fn () => $this->variant->final_price * $this->quantity,
-        );
+        return $this->variant->product;
+    }
+
+    public function subtotal(): float
+    {
+        return $this->variant->final_price * $this->quantity;
     }
 }

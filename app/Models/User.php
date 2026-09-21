@@ -2,20 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes, \Illuminate\Auth\MustVerifyEmail;
+    use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
-        'google_id',
         'password',
         'phone',
         'avatar',
@@ -47,6 +44,8 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Address::class);
     }
 
+    // --- Mới thêm cho phần Thành viên 2 (sản phẩm) ---
+
     public function reviews()
     {
         return $this->hasMany(Review::class);
@@ -57,6 +56,10 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Wishlist::class);
     }
 
+    /**
+     * Kiểm tra nhanh 1 sản phẩm có nằm trong wishlist của user này không.
+     * Dùng ở trang chi tiết sản phẩm để hiện đúng trạng thái nút "Yêu thích" (đã tim hay chưa).
+     */
     public function hasInWishlist(int $productId): bool
     {
         return $this->wishlists()->where('product_id', $productId)->exists();
@@ -89,5 +92,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isCustomer(): bool
     {
         return $this->role?->name === 'customer';
+    }
+    public function orders()
+    {
+    return $this->hasMany(Order::class);
+    }
+
+    public function cart()
+    {
+    return $this->hasOne(Cart::class);
     }
 }
