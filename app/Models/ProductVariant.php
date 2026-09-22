@@ -37,7 +37,7 @@ class ProductVariant extends Model
     protected function finalPrice(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->price_override ?? $this->product->base_price,
+            get: fn () => $this->price_override ?? $this->product->sale_price,
         );
     }
 

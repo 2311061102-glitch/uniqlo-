@@ -4,21 +4,38 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Trang chủ tạm thời (thành viên 2 sẽ thay bằng trang chủ thật sau)
+| Trang chủ tạm thời (sẽ thay bằng trang chủ thật ở Giai đoạn 6)
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 /*
 |--------------------------------------------------------------------------
-| Route cho khách chưa đăng nhập (guest)
+| Route công khai — sản phẩm & danh mục, ai cũng xem được
+|--------------------------------------------------------------------------
+*/
+Route::get('/san-pham', [ProductController::class, 'index'])->name('products.index');
+Route::get('/san-pham-khuyen-mai', [ProductController::class, 'sale'])->name('products.sale');
+Route::get('/goi-y-san-pham', [ProductController::class, 'suggestions'])->name('products.suggestions');
+Route::get('/san-pham/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/san-pham/{product:slug}/kiem-tra-ton-kho', [ProductController::class, 'checkStock'])->name('products.checkStock');
+
+Route::get('/danh-muc', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/danh-muc/{category:slug}', [ProductController::class, 'byCategory'])->name('products.category');
+
+/*
+|--------------------------------------------------------------------------
+| Route cho khách chưa đăng nhập (guest) — phần Thành viên 1
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest')->group(function () {
@@ -37,11 +54,15 @@ Route::middleware('guest')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Route cho user đã đăng nhập (auth)
+| Route cho user đã đăng nhập (auth) — phần Thành viên 1
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
     Route::post('/dang-xuat', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('/yeu-thich', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/yeu-thich/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/san-pham/{product:slug}/danh-gia', [ReviewController::class, 'store'])->name('reviews.store');
 
     Route::get('/tai-khoan', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/tai-khoan', [ProfileController::class, 'update'])->name('profile.update');
@@ -49,7 +70,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/tai-khoan/doi-mat-khau', [ProfileController::class, 'editPassword'])->name('password.edit');
     Route::put('/tai-khoan/doi-mat-khau', [ProfileController::class, 'updatePassword'])->name('password.change');
 
-    // --- Mới thêm ở Giai đoạn 5: sổ địa chỉ ---
     Route::prefix('tai-khoan/dia-chi')->name('addresses.')->group(function () {
         Route::get('/', [AddressController::class, 'index'])->name('index');
         Route::get('/them-moi', [AddressController::class, 'create'])->name('create');
@@ -63,7 +83,7 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| VÍ DỤ cách dùng middleware phân quyền role (tham khảo cho sau này):
+| VÍ DỤ middleware phân quyền role (tham khảo cho trang admin sau này):
 |--------------------------------------------------------------------------
 |
 | Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {

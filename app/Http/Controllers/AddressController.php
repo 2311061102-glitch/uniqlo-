@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AddressRequest;
 use App\Models\Address;
+use App\Services\AddressService;
 use Illuminate\Http\Request;
 
 class AddressController extends Controller
@@ -27,23 +28,9 @@ class AddressController extends Controller
         return view('addresses.create');
     }
 
-    public function store(AddressRequest $request)
+    public function store(AddressRequest $request, AddressService $addressService)
     {
-        $validated = $request->validated();
-        $user = $request->user();
-
-        $isFirstAddress = $user->addresses()->count() === 0;
-
-        if ($isFirstAddress) {
-            // Địa chỉ đầu tiên luôn tự động là mặc định, không cần user tự chọn
-            $validated['is_default'] = true;
-        } elseif (! empty($validated['is_default'])) {
-            // Nếu user tick "đặt làm mặc định", bỏ mặc định của các địa chỉ CŨ trước
-            // (tránh trường hợp có 2 địa chỉ cùng là mặc định)
-            $user->addresses()->update(['is_default' => false]);
-        }
-
-        $user->addresses()->create($validated);
+        $addressService->create($request->user(), $request->validated());
 
         return redirect()->route('addresses.index')->with('success', 'Thêm địa chỉ thành công!');
     }
@@ -55,46 +42,29 @@ class AddressController extends Controller
         return view('addresses.edit', compact('address'));
     }
 
-    public function update(AddressRequest $request, Address $address)
+    public function update(AddressRequest $request, Address $address, AddressService $addressService)
     {
         $this->authorizeOwner($address);
 
-        $validated = $request->validated();
-
-        if (! empty($validated['is_default'])) {
-            $address->user->addresses()->where('id', '!=', $address->id)->update(['is_default' => false]);
-        } else {
-            $validated['is_default'] = false;
-        }
-
-        $address->update($validated);
+        $addressService->update($address, $request->validated());
 
         return redirect()->route('addresses.index')->with('success', 'Cập nhật địa chỉ thành công!');
     }
 
-    public function destroy(Address $address)
+    public function destroy(Address $address, AddressService $addressService)
     {
         $this->authorizeOwner($address);
 
-        $wasDefault = $address->is_default;
-        $user = $address->user;
-
-        $address->delete();
-
-        // Nếu vừa xóa mất địa chỉ mặc định, tự động gán mặc định cho địa chỉ còn lại đầu tiên (nếu có)
-        if ($wasDefault) {
-            $user->addresses()->first()?->update(['is_default' => true]);
-        }
+        $addressService->delete($address);
 
         return back()->with('success', 'Đã xóa địa chỉ.');
     }
 
-    public function setDefault(Address $address)
+    public function setDefault(Address $address, AddressService $addressService)
     {
         $this->authorizeOwner($address);
 
-        $address->user->addresses()->update(['is_default' => false]);
-        $address->update(['is_default' => true]);
+        $addressService->setDefault($address);
 
         return back()->with('success', 'Đã đặt làm địa chỉ mặc định.');
     }

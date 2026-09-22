@@ -8,9 +8,12 @@ use Illuminate\Support\Str;
 
 class Product extends Model
 {
+    protected $appends = ['sale_price'];
+
     protected $fillable = [
         'category_id', 'name', 'slug', 'description',
         'material', 'base_price', 'is_featured', 'is_active', 'sold_count',
+        'discount_percent',
     ];
 
     protected function casts(): array
@@ -19,6 +22,7 @@ class Product extends Model
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             'base_price' => 'integer',
+            'discount_percent' => 'integer',
         ];
     }
 
@@ -74,6 +78,18 @@ class Product extends Model
     public function scopeBestSelling($query)
     {
         return $query->orderByDesc('sold_count');
+    }
+
+    public function scopeOnSale($query)
+    {
+        return $query->where('discount_percent', '>', 0);
+    }
+
+    protected function salePrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => (int) round($this->base_price * (100 - $this->discount_percent) / 100),
+        );
     }
 
     // ----- Accessor: thuộc tính tính toán, gọi như $product->total_stock -----
