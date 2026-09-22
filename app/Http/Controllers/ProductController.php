@@ -14,9 +14,16 @@ class ProductController extends Controller
         return $this->renderList($request);
     }
 
-    public function byCategory(Request $request, Category $category)
+    public function byCategory(Request $request, string $category)
     {
-        return $this->renderList($request, $category);
+        $resolvedCategory = Category::query()
+            ->where('slug', $category)
+            ->orWhere('slug', 'demo-'.$category)
+            ->first();
+
+        abort_unless($resolvedCategory, 404);
+
+        return $this->renderList($request, $resolvedCategory);
     }
 
     private function renderList(Request $request, ?Category $category = null)
@@ -81,8 +88,9 @@ class ProductController extends Controller
         $userReview = auth()->check()
         ? $product->reviews->firstWhere('user_id', auth()->id())
         : null;
+        $isWishlisted = auth()->check() && auth()->user()->hasInWishlist($product->id);
 
-        return view('products.show', compact('product', 'sizes', 'colors', 'userReview'));
+        return view('products.show', compact('product', 'sizes', 'colors', 'userReview', 'isWishlisted'));
     }
 
     public function checkStock(Request $request, Product $product)

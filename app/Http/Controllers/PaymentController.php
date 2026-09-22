@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Services\VnPayService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -87,5 +88,30 @@ class PaymentController extends Controller
         ]);
 
         return response()->json(['RspCode' => '00', 'Message' => 'Confirm Success']);
+    }
+
+    /** Trạng thái QR để màn hình thanh toán tự cập nhật sau khi SePay nhận tiền. */
+    public function status(Order $order)
+    {
+        abort_if($order->user_id !== auth()->id(), 403);
+
+        if ($order->payment_method === 'vietqr' && $order->payment_status !== 'paid'
+            && $order->order_status !== 'cancelled' && $order->qr_expires_at?->isPast()) {
+            DB::transaction(function () use ($order) {
+                $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+                if (! $locked || $locked->payment_status === 'paid' || $locked->order_status === 'cancelled') return;
+                $locked->load('items.variant');
+                foreach ($locked->items as $item) $item->variant?->increment('stock_quantity', $item->quantity);
+                $locked->update(['order_status' => 'cancelled', 'payment_status' => 'failed']);
+                $locked->payments()->latest()->first()?->update(['status' => 'failed']);
+            });
+            $order->refresh();
+        }
+
+        return response()->json([
+            'payment_status' => $order->payment_status,
+            'order_status' => $order->order_status,
+            'expired' => $order->order_status === 'cancelled',
+        ]);
     }
 }

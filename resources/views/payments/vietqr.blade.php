@@ -28,21 +28,9 @@
             <strong>{{ $order->payment_status === 'paid' ? 'Đã thanh toán' : 'Đang chờ chuyển khoản' }}</strong>
         </p>
 
-        {{--
-            Nút này CHỈ hiện với tài khoản admin — dùng để demo/test luồng xác nhận
-            thanh toán trong lúc chưa có trang Admin thật (Thành viên 4 sẽ làm sau).
-            Khách hàng bình thường KHÔNG thấy và KHÔNG tự xác nhận được cho chính mình.
-        --}}
-        @auth
-            @if (auth()->user()->isAdmin() && $order->payment_status !== 'paid')
-                <form method="POST" action="{{ route('orders.confirmPayment', $order) }}" style="margin-top: 16px;">
-                    @csrf
-                    <button type="submit" class="btn-primary">
-                        [Demo Admin] Xác nhận đã nhận được chuyển khoản
-                    </button>
-                </form>
-            @endif
-        @endauth
+        <div id="qr-auto-status" class="payment-status-box" style="margin-top:16px;">
+            <span>Hệ thống đang tự động kiểm tra giao dịch...</span>
+        </div>
 
         <p class="auth-card__footer">
             <a href="{{ route('orders.show', $order) }}">Xem chi tiết đơn hàng</a>
@@ -50,3 +38,24 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    const box = document.getElementById('qr-auto-status');
+    if (!box) return;
+    const url = @json(route('checkout.status', $order));
+    const orderUrl = @json(route('orders.show', $order));
+    const timer = setInterval(() => fetch(url, {headers: {'Accept': 'application/json'}}).then(r => r.json()).then(data => {
+        if (data.payment_status === 'paid') {
+            clearInterval(timer);
+            box.innerHTML = '<strong style="color:#16824f">Đã nhận tiền tự động. Đơn hàng đã được xác nhận.</strong>';
+            setTimeout(() => window.location.href = orderUrl, 1200);
+        } else if (data.expired) {
+            clearInterval(timer);
+            box.innerHTML = '<strong style="color:#b3261e">Mã QR đã hết hạn, đơn hàng đã được hủy.</strong>';
+        }
+    }).catch(() => {}), 3000);
+})();
+</script>
+@endpush

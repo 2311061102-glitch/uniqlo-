@@ -88,7 +88,7 @@
     <script>
     (function () {
         const statusUrl = '{{ route("checkout.status", $order) }}';
-        const successUrl = '{{ route("checkout.success", $order) }}';
+        const successUrl = '{{ route("orders.show", $order) }}';
         const cartUrl = '{{ route("cart.index") }}';
         const expiresAt = new Date('{{ $order->qr_expires_at?->toIso8601String() }}').getTime();
 

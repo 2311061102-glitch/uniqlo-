@@ -52,7 +52,7 @@ class SepayWebhookController extends Controller
 
         $this->processPayload($fakePayload);
 
-        return redirect()->route('checkout.success', $order)
+        return redirect()->route('orders.show', $order)
             ->with('success', '[DEMO] Đã giả lập giao dịch chuyển khoản thành công.');
     }
 
@@ -72,19 +72,20 @@ class SepayWebhookController extends Controller
             return;
         }
 
-        // Tìm mã đơn hàng (dạng ORD + số) nằm trong nội dung chuyển khoản
+        // Tìm mã đơn hàng trong nội dung chuyển khoản. Mã hiện tại có dạng DH + ngày + 4 ký tự.
         $content = $payload['content'] ?? '';
-        if (! preg_match('/ORD\d+/', $content, $matches)) {
+        if (! preg_match('/\b(DH\d{8}[A-Z0-9]{4}|ORD\d+)\b/i', strtoupper($content), $matches)) {
             return;
         }
 
         $order = Order::where('order_code', $matches[0])->first();
-        if (! $order || ! $order->payment) {
+        if (! $order || $order->payment_method !== 'vietqr' || ! $order->payment) {
             return;
         }
 
         // Đơn đã thanh toán rồi thì không xử lý lại
-        if ($order->payment_status === 'paid') {
+        if ($order->payment_status === 'paid' || $order->order_status === 'cancelled'
+            || ($order->qr_expires_at && $order->qr_expires_at->isPast())) {
             return;
         }
 
@@ -101,12 +102,13 @@ class SepayWebhookController extends Controller
                 'status'                 => 'success',
                 'transaction_code'       => $payload['referenceCode'] ?? null,
                 'gateway_transaction_id' => $gatewayId ?: null,
-                'raw_webhook_payload'    => json_encode($payload),
+                'raw_webhook_payload'    => $payload,
                 'paid_at'                => now(),
             ]);
 
             $order->update([
                 'payment_status' => 'paid',
+                'order_status' => $order->order_status === 'pending' ? 'confirmed' : $order->order_status,
             ]);
         });
     }

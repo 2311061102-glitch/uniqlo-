@@ -11,8 +11,9 @@ class Order extends Model
     protected $fillable = [
         'user_id', 'order_code', 'voucher_id',
         'recipient_name', 'recipient_phone', 'province', 'district', 'ward', 'address_detail',
+        'fulfillment_branch_code', 'fulfillment_branch_name', 'fulfillment_branch_address',
         'subtotal_amount', 'shipping_fee', 'discount_amount', 'total_amount',
-        'payment_method', 'payment_status', 'order_status', 'note',
+        'payment_method', 'payment_status', 'order_status', 'qr_expires_at', 'note',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class Order extends Model
             'shipping_fee' => 'integer',
             'discount_amount' => 'integer',
             'total_amount' => 'integer',
+            'qr_expires_at' => 'datetime',
         ];
     }
 

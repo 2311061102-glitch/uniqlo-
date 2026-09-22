@@ -15,21 +15,38 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\Admin\VoucherController as AdminVoucherController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ManagementController;
+use App\Http\Controllers\SepayWebhookController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\WishlistController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    // Giữ trang chủ render được trong lúc database chưa migrate (ví dụ health check/test sạch).
+    $featuredProducts = collect();
+    $homeCategories = collect();
+    if (\Illuminate\Support\Facades\Schema::hasTable('products')) {
+        $featuredProducts = \App\Models\Product::active()->with(['images', 'variants', 'reviews'])->orderByDesc('is_featured')->orderByDesc('sold_count')->take(4)->get();
+    }
+    if (\Illuminate\Support\Facades\Schema::hasTable('categories')) {
+        $homeCategories = \App\Models\Category::where('is_active', true)->whereNull('parent_id')->withCount('products')->orderBy('name')->take(8)->get();
+    }
+    return view('welcome', compact('featuredProducts', 'homeCategories'));
 })->name('home');
 
 Route::get('/san-pham', [ProductController::class, 'index'])->name('products.index');
+Route::get('/tim-kiem/goi-y', [SearchController::class, 'suggestions'])->name('search.suggestions');
 Route::get('/san-pham/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/san-pham/{product:slug}/kiem-tra-ton-kho', [ProductController::class, 'checkStock'])->name('products.checkStock');
 Route::get('/san-pham/{product:slug}/danh-gia', [ReviewController::class, 'indexJson'])->name('reviews.indexJson');
 
 Route::get('/danh-muc', [CategoryController::class, 'index'])->name('categories.index');
-Route::get('/danh-muc/{category:slug}', [ProductController::class, 'byCategory'])->name('products.category');
+Route::get('/danh-muc/{category}', [ProductController::class, 'byCategory'])->name('products.category');
+Route::get('/he-thong-cua-hang', [StoreController::class, 'index'])->name('stores.index');
 
 Route::get('/ma-giam-gia', [VoucherController::class, 'index'])->name('vouchers.index');
 Route::get('/gio-hang', [CartController::class, 'index'])->name('cart.index');
@@ -42,6 +59,7 @@ Route::delete('/gio-hang', [CartController::class, 'clear'])->name('cart.clear')
 
 Route::get('/thanh-toan/vnpay/return', [PaymentController::class, 'vnpayReturn'])->name('payments.vnpay.return');
 Route::get('/thanh-toan/vnpay/ipn', [PaymentController::class, 'vnpayIpn'])->name('payments.vnpay.ipn');
+Route::post('/webhooks/sepay', [SepayWebhookController::class, 'handle'])->name('payments.sepay.webhook');
 
 Route::middleware('guest')->group(function () {
     Route::get('/dang-ky', [AuthController::class, 'showRegisterForm'])->name('register');
@@ -93,10 +111,17 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/don-hang', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/don-hang/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/don-hang/{order}/huy', [OrderController::class, 'cancelConfirm'])->name('orders.cancel.confirm');
     Route::post('/don-hang/{order}/huy', [OrderController::class, 'cancel'])->name('orders.cancel');
+
+    Route::get('/yeu-thich', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/yeu-thich/{product:slug}', [WishlistController::class, 'toggle'])->name('wishlist.add');
+    Route::delete('/yeu-thich/{product:slug}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 
     Route::get('/don-hang/{order}/thanh-toan-vietqr', [PaymentController::class, 'vietqr'])->name('payments.vietqr');
     Route::get('/don-hang/{order}/thanh-toan-vnpay', [PaymentController::class, 'vnpay'])->name('payments.vnpay.pay');
+    Route::get('/don-hang/{order}/thanh-toan/status', [PaymentController::class, 'status'])->name('checkout.status');
+    Route::post('/don-hang/{order}/sepay-demo', [SepayWebhookController::class, 'simulate'])->name('sepay.simulate');
 
     Route::post('/don-hang/{order}/xac-nhan-thanh-toan', [OrderController::class, 'confirmPayment'])
         ->middleware('role:admin')
@@ -119,7 +144,30 @@ Route::middleware('auth')->group(function () {
     })->middleware('throttle:6,1')->name('verification.send');
 });
 
-Route::prefix('quan-tri/vouchers')->name('admin.vouchers.')->middleware('auth')->group(function () {
+Route::prefix('quan-tri')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::view('/phan-quyen', 'admin.permissions')->name('permissions');
+    Route::get('/san-pham', [ManagementController::class, 'products'])->name('products.index');
+    Route::get('/san-pham/tao-moi', [ManagementController::class, 'productCreate'])->name('products.create');
+    Route::post('/san-pham', [ManagementController::class, 'productStore'])->name('products.store');
+    Route::get('/san-pham/{product}/sua', [ManagementController::class, 'productEdit'])->name('products.edit');
+    Route::put('/san-pham/{product}', [ManagementController::class, 'productUpdate'])->name('products.update');
+    Route::patch('/san-pham/{product}/bat-tat', [ManagementController::class, 'productToggle'])->name('products.toggle');
+    Route::delete('/san-pham/{product}', [ManagementController::class, 'productDestroy'])->name('products.destroy');
+    Route::get('/danh-muc', [ManagementController::class, 'categories'])->name('categories.index');
+    Route::get('/danh-muc/tao-moi', [ManagementController::class, 'categoryCreate'])->name('categories.create');
+    Route::post('/danh-muc', [ManagementController::class, 'categoryStore'])->name('categories.store');
+    Route::get('/danh-muc/{category}/sua', [ManagementController::class, 'categoryEdit'])->name('categories.edit');
+    Route::put('/danh-muc/{category}', [ManagementController::class, 'categoryUpdate'])->name('categories.update');
+    Route::patch('/danh-muc/{category}/bat-tat', [ManagementController::class, 'categoryToggle'])->name('categories.toggle');
+    Route::delete('/danh-muc/{category}', [ManagementController::class, 'categoryDestroy'])->name('categories.destroy');
+    Route::get('/don-hang', [ManagementController::class, 'orders'])->name('orders.index');
+    Route::get('/don-hang/{order}', [ManagementController::class, 'orderShow'])->name('orders.show');
+    Route::patch('/don-hang/{order}', [ManagementController::class, 'orderStatus'])->name('orders.update');
+    Route::get('/khach-hang', [ManagementController::class, 'customers'])->name('customers.index');
+});
+
+Route::prefix('quan-tri/vouchers')->name('admin.vouchers.')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/', [AdminVoucherController::class, 'index'])->name('index');
     Route::get('/tao-moi', [AdminVoucherController::class, 'create'])->name('create');
     Route::post('/', [AdminVoucherController::class, 'store'])->name('store');

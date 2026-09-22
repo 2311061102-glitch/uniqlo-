@@ -5,6 +5,7 @@
 @section('content')
 <h1 class="page-title">Danh mục sản phẩm</h1>
 
+@auth @if(auth()->user()->isAdmin())<p><a href="{{ route('admin.categories.index') }}" class="admin-inline-edit">⚙ Quản lý danh mục</a></p>@endif @endauth
 <div class="category-grid">
     @foreach ($categories as $category)
         <a href="{{ route('products.category', $category) }}" class="category-card">

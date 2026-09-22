@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'thanh-toan/vnpay/ipn',
+            'webhooks/sepay',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -158,6 +158,7 @@ body:has(.home-page) .site-header {
   .home-category-grid { grid-template-columns: 1fr; }
   .home-category:first-child { grid-column: auto; }
   .home-category { min-height: 280px; }
+  body:has(.home-page) .admin-access-bar { margin-top: 112px; }
 }
 
 .site-header__nav a:hover {
@@ -1556,3 +1557,6 @@ button:focus-visible,
   border-color: var(--border-selected-color, #000);
   background: var(--fill-background-selected-color, #f4f4f4);
 }
+.admin-access-bar{position:relative;z-index:11;background:#191919;color:#fff;display:flex;align-items:center;justify-content:center;gap:24px;padding:9px 20px;font-size:12px;letter-spacing:.01em}.admin-access-bar b{color:#fff;font-weight:700}.admin-access-bar a{color:#fff;text-decoration:none;border:1px solid #666;border-radius:4px;padding:5px 10px;font-weight:700}.admin-access-bar a:hover{background:#e60012;border-color:#e60012}body:has(.home-page) .admin-access-bar{margin-top:64px}body:has(.home-page) .home-page{margin-top:0}
+.admin-inline-edit{display:inline-flex;align-items:center;gap:6px;color:#d60012;border:1px solid #e60012;border-radius:5px;padding:7px 10px;text-decoration:none;font-size:12px;font-weight:700;margin-bottom:12px}.admin-inline-edit:hover{background:#e60012;color:#fff}
+.search-autocomplete{margin:0 0 22px;border-bottom:1px solid #ddd}.search-autocomplete:empty{display:none}.search-autocomplete__item{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #eee;text-decoration:none;color:#111}.search-autocomplete__item img{width:44px;height:54px;object-fit:cover;background:#f3f3f3}.search-autocomplete__item strong,.search-autocomplete__item small{display:block}.search-autocomplete__item strong{font-size:13px}.search-autocomplete__item small{color:#777;margin-top:4px;font-size:11px}.wishlist-count{color:#777;font-size:13px}.wishlist-empty{max-width:600px;margin:45px auto;text-align:center;padding:52px 20px}.wishlist-empty strong{display:block;font-size:18px;margin-bottom:8px}.wishlist-empty p{color:#777;margin-bottom:20px}.wishlist-item{position:relative}.wishlist-remove-form{position:absolute;right:10px;top:10px;z-index:2}.wishlist-remove-form button{width:34px;height:34px;border:1px solid #ddd;border-radius:50%;background:#fff;color:#e00012;font-size:17px;cursor:pointer}.cancel-page{display:grid;place-items:center;min-height:55vh}.cancel-card{max-width:480px;text-align:center;border:1px solid #e4e4e4;padding:40px 32px;background:#fff}.cancel-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:#fff3f3;color:#d00012;font-size:25px;font-weight:800;margin:0 auto 15px}.cancel-card h1{margin-bottom:12px}.cancel-card p{color:#555}.cancel-actions{display:flex;justify-content:center;gap:12px;margin-top:25px}.cancel-actions form{margin:0}.wishlist-inline-form{display:inline}.wishlist-inline-form button{cursor:pointer}

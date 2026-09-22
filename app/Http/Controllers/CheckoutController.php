@@ -33,12 +33,16 @@ class CheckoutController extends Controller
         $selectedAddress = $addresses->firstWhere('is_default', true) ?? $addresses->first();
         $shippingFee = ShippingFeeCalculator::calculateForAddress($selectedAddress, $subtotal);
         $shippingDistance = ShippingFeeCalculator::distanceInKm($selectedAddress?->latitude, $selectedAddress?->longitude);
+        $nearestBranch = ShippingFeeCalculator::nearestBranch($selectedAddress);
         $shippingFeesByAddress = $addresses->mapWithKeys(fn ($address) => [
             $address->id => ShippingFeeCalculator::calculateForAddress($address, $subtotal),
         ]);
+        $nearestBranchesByAddress = $addresses->mapWithKeys(fn ($address) => [
+            $address->id => ShippingFeeCalculator::nearestBranch($address),
+        ]);
         $total = $subtotal + $shippingFee - $discount;
 
-        return view('checkout.index', compact('cartItems', 'addresses', 'subtotal', 'voucher', 'availableVouchers', 'discount', 'shippingFee', 'shippingDistance', 'shippingFeesByAddress', 'total'));
+        return view('checkout.index', compact('cartItems', 'addresses', 'subtotal', 'voucher', 'availableVouchers', 'discount', 'shippingFee', 'shippingDistance', 'nearestBranch', 'shippingFeesByAddress', 'nearestBranchesByAddress', 'total'));
     }
 
     public function applyVoucher(Request $request)
@@ -141,9 +145,10 @@ class CheckoutController extends Controller
         $voucher = $this->sessionVoucher($subtotal);
         $discount = $voucher?->calculateDiscount($subtotal) ?? 0;
         $shippingFee = ShippingFeeCalculator::calculateForAddress($address, $subtotal);
+        $nearestBranch = ShippingFeeCalculator::nearestBranch($address);
         $total = $subtotal + $shippingFee - $discount;
 
-        $order = DB::transaction(function () use ($user, $address, $cart, $cartItems, $subtotal, $discount, $voucher, $shippingFee, $total, $validated) {
+        $order = DB::transaction(function () use ($user, $address, $cart, $cartItems, $subtotal, $discount, $voucher, $shippingFee, $total, $validated, $nearestBranch) {
             $order = $user->orders()->create([
                 'voucher_id' => $voucher?->id,
                 'recipient_name' => $address->recipient_name,
@@ -152,13 +157,19 @@ class CheckoutController extends Controller
                 'district' => $address->district,
                 'ward' => $address->ward,
                 'address_detail' => $address->address_detail,
+                'fulfillment_branch_code' => $nearestBranch['code'] ?? null,
+                'fulfillment_branch_name' => $nearestBranch['name'] ?? null,
+                'fulfillment_branch_address' => $nearestBranch['address'] ?? null,
                 'subtotal_amount' => $subtotal,
                 'shipping_fee' => $shippingFee,
                 'discount_amount' => $discount,
                 'total_amount' => $total,
                 'payment_method' => $validated['payment_method'],
-                'payment_status' => 'pending',
-                'order_status' => 'pending',
+                // COD không cần chờ duyệt thanh toán: đơn được xác nhận ngay,
+                // tiền sẽ thu khi giao hàng. QR/VNPay chỉ xác nhận sau gateway callback/webhook.
+                'payment_status' => $validated['payment_method'] === 'cod' ? 'unpaid' : 'pending',
+                'order_status' => $validated['payment_method'] === 'cod' ? 'confirmed' : 'pending',
+                'qr_expires_at' => $validated['payment_method'] === 'vietqr' ? now()->addMinutes(10) : null,
             ]);
 
             foreach ($cartItems as $item) {

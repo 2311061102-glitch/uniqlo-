@@ -3,7 +3,23 @@
 @section('title', 'Thanh toán')
 
 @section('content')
-<h1 class="page-title">Thanh toán</h1>
+<div class="checkout-shell">
+    <div class="checkout-pick-banner">
+        <div class="checkout-pick-banner__mark">↗</div>
+        <div>
+            <strong>ORDER &amp; PICK</strong>
+            <span>Đặt hàng online — nhận hàng nhanh chóng tại cửa hàng.</span>
+        </div>
+        <a href="{{ route('products.index') }}">Tiếp tục mua sắm →</a>
+    </div>
+
+    <div class="checkout-intro">
+        <div>
+            <p class="cart-eyebrow">MY UNIS</p>
+            <h1>Thanh toán</h1>
+            <p>Hoàn tất thông tin để nhận đơn hàng của bạn.</p>
+        </div>
+    </div>
 
 <div class="checkout-voucher-box">
     <div class="checkout-voucher-box__heading">
@@ -12,12 +28,11 @@
             <span class="checkout-voucher-box__applied">Đã áp dụng {{ $voucher->code }}</span>
         @endif
     </div>
-    @if ($availableVouchers->isNotEmpty())
-        <details class="checkout-voucher-dropdown">
+    <details class="checkout-voucher-dropdown">
             <summary>Chọn mã giảm giá <span>⌄</span></summary>
             <div class="checkout-voucher-list">
             <span class="checkout-voucher-list__label">Mã phù hợp với giỏ hàng của bạn</span>
-            @foreach ($availableVouchers as $availableVoucher)
+            @forelse ($availableVouchers as $availableVoucher)
                 <div class="checkout-voucher-option {{ $voucher?->id === $availableVoucher->id ? 'is-applied' : '' }}">
                     <div>
                         <strong>{{ $availableVoucher->code }}</strong>
@@ -40,10 +55,11 @@
                         <span class="checkout-voucher-option__used">Đang dùng</span>
                     @endif
                 </div>
-            @endforeach
+            @empty
+                <div class="checkout-voucher-empty">Hiện chưa có mã giảm giá phù hợp với giỏ hàng này. Bạn vẫn có thể nhập mã thủ công bên dưới.</div>
+            @endforelse
             </div>
         </details>
-    @endif
 
     @if ($voucher)
         <form method="POST" action="{{ route('checkout.voucher.remove') }}" class="checkout-voucher-box__remove-form">
@@ -65,15 +81,16 @@
         <div class="checkout-section">
             <h2>Địa chỉ giao hàng</h2>
             @foreach ($addresses as $address)
+                @php($addressBranch = $nearestBranchesByAddress[$address->id] ?? null)
                 <label class="checkout-option">
-                    <input type="radio" name="address_id" value="{{ $address->id }}" data-shipping-fee="{{ $shippingFeesByAddress[$address->id] }}" {{ $loop->first ? 'checked' : '' }}>
+                    <input type="radio" name="address_id" value="{{ $address->id }}" data-shipping-fee="{{ $shippingFeesByAddress[$address->id] }}" data-shipping-branch="{{ $addressBranch['name'] ?? 'Chi nhánh gần nhất' }}" data-shipping-branch-address="{{ $addressBranch['address'] ?? '' }}" {{ $loop->first ? 'checked' : '' }}>
                     <span>
                         <strong>{{ $address->recipient_name }} — {{ $address->phone }}</strong><br>
                         {{ $address->address_detail }}, {{ $address->ward }}, {{ $address->district }}, {{ $address->province }}
                         @if ($address->is_default)<span class="checkout-option__badge">Mặc định</span>@endif
                         @php($addressDistance = \App\Services\ShippingFeeCalculator::distanceInKm($address->latitude, $address->longitude))
                         @if ($addressDistance !== null)
-                            <small class="checkout-option__meta">Cách kho khoảng {{ number_format($addressDistance, 1, ',', '.') }} km</small>
+                            <small class="checkout-option__meta">Cách {{ $addressBranch['name'] ?? 'shop' }} khoảng {{ number_format($addressDistance, 1, ',', '.') }} km</small>
                         @else
                             <small class="checkout-option__meta">Chưa ghim vị trí — phí tạm tính theo khu vực</small>
                         @endif
@@ -85,9 +102,26 @@
 
         <div class="checkout-section">
             <h2>Phương thức thanh toán</h2>
-            <label class="checkout-option"><input type="radio" name="payment_method" value="cod" checked><span><strong>Thanh toán khi nhận hàng (COD)</strong><br>Trả tiền mặt cho shipper khi nhận hàng.</span></label>
-            <label class="checkout-option"><input type="radio" name="payment_method" value="vietqr"><span><strong>Chuyển khoản ngân hàng (VietQR)</strong><br>Quét mã QR và chuyển khoản từ ứng dụng ngân hàng.</span></label>
-            <label class="checkout-option"><input type="radio" name="payment_method" value="vnpay"><span><strong>VNPay Sandbox</strong><br>Thanh toán qua VNPay trong môi trường thử nghiệm.</span></label>
+            <label class="checkout-option"><input type="radio" name="payment_method" value="cod" checked><span><strong>Thanh toán khi nhận hàng (COD)</strong><br>Trả tiền mặt cho shipper khi nhận hàng. Đơn được xác nhận ngay, không cần duyệt thanh toán.</span></label>
+            <label class="checkout-option"><input type="radio" name="payment_method" value="vietqr"><span><strong>Chuyển khoản ngân hàng (VietQR)</strong><br>Quét mã QR; hệ thống tự động duyệt ngay khi ngân hàng báo nhận đủ tiền.</span></label>
+            <label class="checkout-option"><input type="radio" name="payment_method" value="vnpay"><span><strong>VNPay Sandbox</strong><br>Thanh toán liên kết; đơn tự động xác nhận sau khi VNPay gửi IPN thành công.</span></label>
+        </div>
+
+        <div class="shipping-fee-card">
+            <div class="shipping-fee-card__heading">
+                <div>
+                    <h2>Phí giao hàng</h2>
+                    <p id="checkout-nearest-branch">Đơn hàng sẽ được xử lý từ {{ $nearestBranch['name'] ?? 'chi nhánh gần nhất' }}{{ $nearestBranch ? ' ('.$nearestBranch['address'].')' : '' }}.</p>
+                </div>
+                <span class="shipping-fee-card__shop">Từ shop</span>
+            </div>
+            <div class="shipping-fee-table" role="table" aria-label="Bảng phí giao hàng">
+                <div class="shipping-fee-table__row shipping-fee-table__row--head" role="row"><span>Khoảng cách</span><span>Phí giao hàng</span></div>
+                @foreach (\App\Services\ShippingFeeCalculator::distanceFeeTiers() as $tier)
+                    <div class="shipping-fee-table__row" role="row"><span>{{ $tier['label'] }}</span><strong>{{ $tier['fee'] === 0 ? 'Miễn phí' : number_format($tier['fee'], 0, ',', '.') . '₫' }}</strong></div>
+                @endforeach
+            </div>
+            <p class="shipping-fee-card__free">Đơn hàng từ {{ number_format(config('services.shipping.free_threshold'), 0, ',', '.') }}₫ được miễn phí giao hàng.</p>
         </div>
 
         <div class="checkout-section">
@@ -106,11 +140,7 @@
         @endforeach
         <div class="checkout-summary__row"><span>Tạm tính</span><span>{{ number_format($subtotal, 0, ',', '.') }}₫</span></div>
         <div class="checkout-summary__row"><span>Phí vận chuyển</span><span id="checkout-shipping-fee">{{ number_format($shippingFee, 0, ',', '.') }}₫</span></div>
-        <small class="checkout-summary__hint">
-            Phí tính từ {{ config('services.shipping.warehouse_name') }}:
-            ≤5km 20.000₫ · ≤15km 30.000₫ · ≤30km 45.000₫ · ≤60km 65.000₫ · &gt;60km 90.000₫.
-            Đơn từ {{ number_format(config('services.shipping.free_threshold'), 0, ',', '.') }}₫ được miễn phí ship.
-        </small>
+        <small class="checkout-summary__hint">Xử lý tại {{ $nearestBranch['name'] ?? 'chi nhánh gần nhất' }} · Tính theo khoảng cách từ chi nhánh.</small>
         @if ($discount > 0)
             <div class="checkout-summary__row checkout-summary__row--discount"><span>Giảm giá{{ $voucher ? ' ('.$voucher->code.')' : '' }}</span><span>-{{ number_format($discount, 0, ',', '.') }}₫</span></div>
         @endif
@@ -118,6 +148,7 @@
         <button type="submit" class="btn-primary">Đặt hàng</button>
     </div>
 </form>
+</div>
 
 @push('scripts')
 <script>
@@ -129,6 +160,9 @@
             const format = value => new Intl.NumberFormat('vi-VN').format(value) + '₫';
             document.getElementById('checkout-shipping-fee').textContent = format(fee);
             document.getElementById('checkout-total').textContent = format(subtotal + fee - discount);
+            const branchName = this.dataset.shippingBranch || 'chi nhánh gần nhất';
+            const branchAddress = this.dataset.shippingBranchAddress ? ` (${this.dataset.shippingBranchAddress})` : '';
+            document.getElementById('checkout-nearest-branch').textContent = `Đơn hàng sẽ được xử lý từ ${branchName}${branchAddress}.`;
         });
     });
 </script>

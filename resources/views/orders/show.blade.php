@@ -5,6 +5,7 @@
 @section('content')
 <h1 class="page-title">Đơn hàng {{ $order->order_code }}</h1>
 
+@auth @if(auth()->user()->isAdmin())<p><a href="{{ route('admin.orders.show', $order) }}" class="admin-inline-edit">⚙ Quản trị đơn hàng</a></p>@endif @endauth
 <div class="order-detail">
     <div class="order-detail__main">
         <div class="checkout-section">
@@ -21,6 +22,9 @@
             <h2>Địa chỉ giao hàng</h2>
             <p>{{ $order->recipient_name }} — {{ $order->phone }}</p>
             <p class="form-hint">{{ $order->address_detail }}, {{ $order->ward }}, {{ $order->district }}, {{ $order->province }}</p>
+            @if($order->fulfillment_branch_name)
+                <p class="form-hint"><strong>Chi nhánh xử lý:</strong> {{ $order->fulfillment_branch_name }} · {{ $order->fulfillment_branch_address }}</p>
+            @endif
         </div>
 
         @if ($order->note)
@@ -67,22 +71,10 @@
             </a>
         @endif
 
-        @if ($order->order_status === 'pending')
-            <form method="POST" action="{{ route('orders.cancel', $order) }}" style="margin-top: 16px;"
-                  onsubmit="return confirm('Hủy đơn hàng này?');">
-                @csrf
-                <button type="submit" class="btn-danger">Hủy đơn hàng</button>
-            </form>
+        @if (in_array($order->order_status, ['pending', 'confirmed'], true))
+            <a href="{{ route('orders.cancel.confirm', $order) }}" class="btn-danger" style="display:inline-block; margin-top:16px; text-decoration:none;">Hủy đơn hàng</a>
         @endif
 
-        @auth
-            @if (auth()->user()->isAdmin() && $order->payment_status !== 'paid' && $order->payment_method === 'vietqr')
-                <form method="POST" action="{{ route('orders.confirmPayment', $order) }}" style="margin-top: 16px;">
-                    @csrf
-                    <button type="submit" class="btn-primary">[Demo Admin] Xác nhận đã thanh toán</button>
-                </form>
-            @endif
-        @endauth
     </div>
 </div>
 

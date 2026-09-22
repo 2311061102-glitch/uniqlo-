@@ -27,6 +27,11 @@
     </div>
 
     <div class="product-info">
+        @auth
+            @if (auth()->user()->isAdmin())
+                <a href="{{ route('admin.products.edit', $product) }}" class="admin-inline-edit">✎ Chỉnh sửa sản phẩm</a>
+            @endif
+        @endauth
         <h1 class="product-info__name">{{ $product->name }}</h1>
         <p id="product-price" class="product-info__price">{{ number_format($product->base_price, 0, ',', '.') }}₫</p>
 

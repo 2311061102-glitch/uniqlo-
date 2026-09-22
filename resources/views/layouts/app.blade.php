@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'UNIQLO Men - Đồ án')</title>
+    <title>@yield('title', 'UNIS Men - Đồ án')</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,13 +14,31 @@
     <link rel="stylesheet" href="{{ asset('css/site.css') }}">
     <link rel="stylesheet" href="{{ asset('css/vouchers.css') }}">
     <link rel="stylesheet" href="{{ asset('css/address-map.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/home-overrides.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/cart-overrides.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/stores.css') }}">
 </head>
 <body>
 
+    <div class="promo-bar"><button type="button" aria-label="Đóng thông báo" class="promo-bar__close">×</button><span>Khám phá bộ sưu tập LifeWear mới — thiết kế cho mỗi ngày.</span><a href="{{ route('products.index') }}">Mua sắm ngay <span aria-hidden="true">→</span></a></div>
+    <script>try { if (localStorage.getItem('unis-promo-dismissed') === '1') document.documentElement.classList.add('promo-dismissed'); } catch (_) {}</script>
+
     <header class="site-header">
-        <a href="{{ route('home') }}" class="site-header__logo" aria-label="UNIQLO trang chủ">
-            <span class="site-header__logo-mark">ユ</span><span class="site-header__logo-word">UNI<br>QLO</span>
+        <a href="{{ route('home') }}" class="site-header__logo" aria-label="UNIS trang chủ">
+            <span class="site-header__logo-mark" aria-hidden="true"></span>
+            <span class="site-header__logo-word" aria-label="UNIS"><span>U</span><span>N</span><span>I</span><span>S</span></span>
         </a>
+
+        <nav class="site-header__gender" aria-label="Bộ sưu tập">
+            @php($routeCategory = request()->route('category'))
+            @php($activeCategorySlug = is_object($routeCategory) ? $routeCategory->slug : ($routeCategory ?: request('category')))
+            @php($activeCategorySlug = str_starts_with((string) $activeCategorySlug, 'demo-') ? substr((string) $activeCategorySlug, 5) : $activeCategorySlug)
+            <a href="{{ route('products.category', ['category' => 'ao-thun']) }}" class="{{ $activeCategorySlug === 'ao-thun' ? 'is-current' : '' }}">ÁO PHÔNG</a>
+            <a href="{{ route('products.category', ['category' => 'ao-so-mi']) }}" class="{{ $activeCategorySlug === 'ao-so-mi' ? 'is-current' : '' }}">ÁO SƠ MI</a>
+            <a href="{{ route('products.category', ['category' => 'quan-jean']) }}" class="{{ $activeCategorySlug === 'quan-jean' || $activeCategorySlug === 'quan-kaki' ? 'is-current' : '' }}">QUẦN DÀI</a>
+            <a href="{{ route('products.category', ['category' => 'ao-khoac']) }}" class="{{ $activeCategorySlug === 'ao-khoac' ? 'is-current' : '' }}">ÁO KHOÁC</a>
+            <a href="{{ route('products.category', ['category' => 'phu-kien']) }}" class="{{ $activeCategorySlug === 'phu-kien' ? 'is-current' : '' }}">PHỤ KIỆN</a>
+        </nav>
 
         <form method="GET" action="{{ route('products.index') }}" class="site-header__search" data-search-form>
             <input type="search" name="q" value="{{ request('q') }}" placeholder="Bạn đang tìm gì?" aria-label="Tìm kiếm sản phẩm">
@@ -55,8 +73,12 @@
         <label for="nav-toggle" class="nav-toggle-button" aria-label="Mở menu">☰</label>
 
         <nav class="site-header__nav">
-            <a href="{{ route('products.index') }}">Sản phẩm</a>
-            <a href="{{ route('categories.index') }}">Danh mục</a>
+            <a href="{{ route('products.index') }}" class="site-header__legacy-link">Sản phẩm</a>
+            <a href="{{ route('categories.index') }}" class="site-header__legacy-link">Danh mục</a>
+            <a href="{{ route('stores.index') }}" class="site-header__legacy-link">Hệ thống cửa hàng</a>
+            @auth
+                <a href="{{ route('wishlist.index') }}" class="site-header__wishlist-link" title="Sản phẩm yêu thích">♡ Yêu thích</a>
+            @endauth
 
             @guest
                 <a href="{{ route('cart.index') }}" class="site-header__action" aria-label="Cart" title="Cart">
@@ -93,6 +115,15 @@
         </nav>
     </header>
 
+    @auth
+        @if (auth()->user()->isAdmin())
+            <div class="admin-access-bar" role="status">
+                <span><b>Chế độ quản trị</b> · Bạn đang đăng nhập bằng tài khoản Admin</span>
+                <a href="{{ route('admin.dashboard') }}">Mở trang quản trị <span aria-hidden="true">→</span></a>
+            </div>
+        @endif
+    @endauth
+
     <main class="site-main">
         @if (session('success'))
             <div class="alert alert--success">{{ session('success') }}</div>
@@ -120,13 +151,62 @@
 
     @stack('scripts')
     <script>
+        document.querySelector('.promo-bar__close')?.addEventListener('click', function () {
+            this.closest('.promo-bar')?.remove();
+            document.body.classList.add('promo-hidden');
+            document.documentElement.classList.add('promo-dismissed');
+            try { localStorage.setItem('unis-promo-dismissed', '1'); } catch (_) {}
+        });
+    </script>
+    <script>
+        // Gợi ý tìm kiếm sản phẩm theo dữ liệu thật, có debounce để không gọi API liên tục.
+        (function () {
+            const panel = document.querySelector('[data-search-panel]');
+            const input = panel?.querySelector('[data-search-input]');
+            const body = panel?.querySelector('.search-panel__body');
+            if (!panel || !input || !body) return;
+            const results = document.createElement('div');
+            results.className = 'search-autocomplete';
+            body.prepend(results);
+            let timer;
+            input.addEventListener('input', function () {
+                clearTimeout(timer);
+                const term = input.value.trim();
+                if (term.length < 2) { results.replaceChildren(); return; }
+                timer = setTimeout(() => fetch('{{ route('search.suggestions') }}?q=' + encodeURIComponent(term), { headers: { Accept: 'application/json' } })
+                    .then(response => response.json()).then(payload => {
+                        results.replaceChildren();
+                        payload.data.forEach(item => {
+                            const link = document.createElement('a'); link.href = item.url; link.className = 'search-autocomplete__item';
+                            if (item.image) { const image = document.createElement('img'); image.src = item.image; image.alt = ''; link.append(image); }
+                            const info = document.createElement('span'); const name = document.createElement('strong'); const price = document.createElement('small'); name.textContent = item.name; price.textContent = item.price; info.append(name, price); link.append(info);
+                            results.append(link);
+                        });
+                    }).catch(() => {}), 220);
+            });
+        })();
+    </script>
+    <script>
+        // Nút yêu thích trên trang chi tiết sản phẩm dùng chung cho cả thêm và bỏ.
+        (function () {
+            const button = document.querySelector('.product-actions .btn-secondary');
+            if (!button || !location.pathname.startsWith('/san-pham/')) return;
+            button.addEventListener('click', function () {
+                const slug = location.pathname.split('/').filter(Boolean)[1];
+                const active = button.textContent.trim() === '♥';
+                fetch('/yeu-thich/' + encodeURIComponent(slug), { method: active ? 'DELETE' : 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, Accept: 'application/json' } })
+                    .then(response => response.json()).then(data => { button.textContent = data.wishlisted ? '♥' : '♡'; button.classList.toggle('btn-secondary--active', data.wishlisted); });
+            });
+        })();
+    </script>
+    <script>
         (function () {
             const form = document.querySelector('[data-search-form]');
             const panel = document.querySelector('[data-search-panel]');
             const input = panel?.querySelector('[data-search-input]');
             const history = panel?.querySelector('[data-search-history]');
             const empty = panel?.querySelector('[data-search-empty]');
-            const storageKey = 'uniqlo-men-search-history';
+            const storageKey = 'unis-men-search-history';
 
             if (!form || !panel || !input || !history) return;
 

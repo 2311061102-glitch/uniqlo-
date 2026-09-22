@@ -44,7 +44,7 @@ class OrderController extends Controller
     {
         $this->authorizeAccess($order);
 
-        if ($order->order_status !== 'pending') {
+        if (! $this->canCancel($order)) {
             return back()->with('error', 'Đơn hàng đang được xử lý, không thể hủy.');
         }
 
@@ -55,6 +55,22 @@ class OrderController extends Controller
         $order->update(['order_status' => 'cancelled']);
 
         return back()->with('success', 'Đã hủy đơn hàng.');
+    }
+
+    public function cancelConfirm(Order $order)
+    {
+        $this->authorizeAccess($order);
+        if (! $this->canCancel($order)) {
+            return redirect()->route('orders.show', $order)->with('error', 'Đơn hàng đã được xử lý và không thể hủy.');
+        }
+        return view('orders.cancel', compact('order'));
+    }
+
+    private function canCancel(Order $order): bool
+    {
+        // Đơn COD được xác nhận ngay để không phải duyệt tiền, nhưng vẫn cho khách hủy
+        // trước khi kho bắt đầu xử lý. Từ processing trở đi không còn được hủy.
+        return in_array($order->order_status, ['pending', 'confirmed'], true);
     }
 
     /**

@@ -60,6 +60,7 @@
 .checkout-voucher-dropdown[open] summary span { transform: rotate(180deg); }
 .checkout-voucher-dropdown .checkout-voucher-list { margin: 0; padding: 10px; }
 .checkout-voucher-list__label { color: #766b59; font-size: .78rem; font-weight: 700; }
+.checkout-voucher-empty { padding: 12px; border: 1px dashed #eadfc9; border-radius: 8px; color: #766b59; background: #fff; font-size: .8rem; line-height: 1.5; }
 .checkout-voucher-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid #eadfc9; border-radius: 10px; background: #fff; }
 .checkout-voucher-option.is-applied { border-color: #b89b5d; background: #fff8e9; }
 .checkout-voucher-option strong { display: block; color: #815f25; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .06em; }
